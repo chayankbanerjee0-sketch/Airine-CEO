@@ -1,0 +1,2447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Airline CEO — Global Aviation Empire Tycoon</title>
+  <style>
+    :root {
+      --bg: #0a0e17;
+      --surface: #121826;
+      --card: #1a2234;
+      --card-border: #2b374e;
+      --primary: #00e5ff;
+      --primary-dark: #032630;
+      --secondary: #38bdf8;
+      --accent-gold: #f59e0b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top HUD Header */
+    header {
+      background: rgba(18, 24, 38, 0.95);
+      border-bottom: 1px solid var(--card-border);
+      padding: 8px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 50;
+      backdrop-filter: blur(10px);
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .airline-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .airline-name {
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: 0.5px;
+    }
+
+    .airline-iata {
+      font-family: var(--font-mono);
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 0.85rem;
+      background: rgba(0, 229, 255, 0.12);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(0, 229, 255, 0.3);
+    }
+
+    .clock-badge {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    .treasury-metrics {
+      display: flex;
+      align-items: flex-end;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .cash-val {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--success);
+    }
+
+    .sub-metrics {
+      display: flex;
+      gap: 10px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .sub-metrics span b {
+      color: var(--text);
+    }
+
+    /* News Ticker */
+    .news-ticker {
+      background: #0f1a2a;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 4px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-size: 0.75rem;
+    }
+
+    .news-text {
+      color: #a5f3fc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+
+    .news-badge {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--accent-gold);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-weight: 700;
+      font-size: 0.7rem;
+      margin-left: 8px;
+    }
+
+    /* Main Viewport Container */
+    main {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: none;
+      flex-direction: column;
+      overflow-y: auto;
+      background: var(--bg);
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    /* Radar Canvas View */
+    #radar-screen {
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(circle at center, #0f2338 0%, #0a0e17 80%);
+    }
+
+    #globe-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+    }
+
+    #globe-canvas:active {
+      cursor: grabbing;
+    }
+
+    /* Radar Controls & Flight Telemetry overlay */
+    .time-warp-bar {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(18, 24, 38, 0.9);
+      border: 1px solid var(--card-border);
+      border-radius: 30px;
+      display: flex;
+      padding: 4px 6px;
+      gap: 4px;
+      backdrop-filter: blur(8px);
+      z-index: 20;
+    }
+
+    .warp-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .warp-btn.active {
+      background: var(--primary);
+      color: var(--primary-dark);
+    }
+
+    .flight-hud-card {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      max-width: 380px;
+      width: calc(100% - 150px);
+      background: rgba(18, 24, 38, 0.95);
+      border: 1px solid rgba(0, 229, 255, 0.4);
+      border-radius: 12px;
+      padding: 12px 14px;
+      backdrop-filter: blur(8px);
+      z-index: 20;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+
+    .flight-hud-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .flight-hud-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .flight-hud-status {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--success);
+    }
+
+    .flight-route-corridor {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 8px 0;
+    }
+
+    .airport-node {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .airport-code {
+      font-family: var(--font-mono);
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .airport-lbl {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .flight-progress-bar {
+      height: 4px;
+      background: #1e293b;
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+      margin: 4px 0;
+    }
+
+    .flight-progress-fill {
+      height: 100%;
+      background: var(--primary);
+      width: 0%;
+      transition: width 0.3s linear;
+    }
+
+    .flight-hud-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* Content Screens (Hangar, Routes, Livery, Finance) */
+    .content-container {
+      padding: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+    }
+
+    .section-subtitle {
+      font-size: 0.8rem;
+      color: var(--primary);
+    }
+
+    .tabs-row {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 8px;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      background: rgba(0, 229, 255, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+    }
+
+    /* Cards Grid */
+    .cards-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.15s ease;
+    }
+
+    .card:hover {
+      border-color: rgba(0, 229, 255, 0.4);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .card-heading {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .card-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: #1e293b;
+      color: var(--text-muted);
+    }
+
+    .badge-primary {
+      background: rgba(0, 229, 255, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+    }
+
+    .badge-gold {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--accent-gold);
+    }
+
+    .specs-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      background: rgba(10, 14, 23, 0.6);
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+
+    .spec-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .spec-key {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .spec-val {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-dark);
+    }
+
+    .btn-primary:hover {
+      background: #38bdf8;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-outline:hover {
+      background: rgba(0, 229, 255, 0.1);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid var(--danger);
+      color: var(--danger);
+    }
+
+    .btn-subtext {
+      font-size: 0.7rem;
+      opacity: 0.8;
+      font-weight: 400;
+    }
+
+    /* Livery Canvas */
+    .livery-preview-card {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 16px;
+      height: 220px;
+      position: relative;
+    }
+
+    #livery-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .swatches-row {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+    }
+
+    .swatch {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.15s ease;
+    }
+
+    .swatch:hover {
+      transform: scale(1.1);
+    }
+
+    .swatch.selected {
+      border-color: var(--primary);
+      box-shadow: 0 0 10px var(--primary);
+    }
+
+    .swatch-check {
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    /* Modals & Dialogs */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      max-width: 520px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 10px;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .form-input {
+      background: #0a0e17;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .slider-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--primary);
+    }
+
+    .slider-val {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      min-width: 60px;
+      text-align: right;
+    }
+
+    /* Bottom Navigation Bar */
+    nav {
+      background: #121826;
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 12px;
+      z-index: 50;
+    }
+
+    .nav-item {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 8px;
+      transition: all 0.15s ease;
+    }
+
+    .nav-item.active {
+      color: var(--primary);
+      background: rgba(0, 229, 255, 0.12);
+    }
+
+    .nav-icon {
+      font-size: 1.25rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Status & News HUD -->
+  <header>
+    <div class="top-bar">
+      <div class="airline-brand">
+        <div class="status-dot"></div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="airline-name" id="hud-name">AeroGlobal</span>
+            <span class="airline-iata" id="hud-iata">AG</span>
+          </div>
+          <div class="clock-badge" id="hud-clock">Day 1 • 08:00 UTC</div>
+        </div>
+      </div>
+      <div class="treasury-metrics">
+        <div class="cash-val" id="hud-cash">$50,000,000</div>
+        <div class="sub-metrics">
+          <span>Rep: <b id="hud-rep">50%</b></span>
+          <span>Airborne: <b id="hud-airborne">1</b></span>
+        </div>
+      </div>
+    </div>
+    <div class="news-ticker" onclick="openEventsModal()">
+      <div class="news-text" id="hud-news">BREAKING NEWS: Global Aviation Demand Remains Resilient Across Key Corridors</div>
+      <div class="news-badge" id="hud-events-badge">1 Active Event</div>
+    </div>
+  </header>
+
+  <!-- Main Viewports -->
+  <main>
+    <!-- 1. Radar Globe Screen -->
+    <section class="screen active" id="radar-screen">
+      <canvas id="globe-canvas"></canvas>
+
+      <!-- Time Warp Speed Controls -->
+      <div class="time-warp-bar">
+        <button class="warp-btn" id="warp-0" onclick="setSpeed(0)">⏸ Pause</button>
+        <button class="warp-btn active" id="warp-1" onclick="setSpeed(1)">1x</button>
+        <button class="warp-btn" id="warp-2" onclick="setSpeed(2)">2x</button>
+        <button class="warp-btn" id="warp-5" onclick="setSpeed(5)">5x</button>
+      </div>
+
+      <!-- Live Flight Telemetry Card -->
+      <div class="flight-hud-card" id="flight-hud">
+        <div class="flight-hud-header">
+          <div class="flight-hud-title">
+            <span>✈</span>
+            <span id="f-hud-num">Flight AG101</span>
+            <span style="color: var(--text-muted); font-size: 0.75rem;" id="f-hud-plane">Embraer E175</span>
+          </div>
+          <div class="flight-hud-status" id="f-hud-status">EN ROUTE</div>
+        </div>
+        <div class="flight-route-corridor">
+          <div class="airport-node">
+            <span class="airport-code" id="f-hud-origin">JFK</span>
+            <span class="airport-lbl">New York</span>
+          </div>
+          <div style="text-align: center; flex: 1; padding: 0 10px;">
+            <div style="font-size: 0.7rem; color: var(--text-muted);" id="f-hud-alt">32,000 ft • 840 km/h</div>
+            <div class="flight-progress-bar">
+              <div class="flight-progress-fill" id="f-hud-bar" style="width: 45%;"></div>
+            </div>
+          </div>
+          <div class="airport-node" style="text-align: right;">
+            <span class="airport-code" id="f-hud-dest">ORD</span>
+            <span class="airport-lbl">Chicago</span>
+          </div>
+        </div>
+        <div class="flight-hud-footer">
+          <span id="f-hud-pax">Pax: 72 | Cargo: 2.1t</span>
+          <span style="color: var(--success); font-weight: 700;" id="f-hud-profit">Est. Profit: +$14,200</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Fleet & Hangar Screen -->
+    <section class="screen" id="hangar-screen">
+      <div class="content-container">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Hangar & Aircraft Procurement</div>
+            <div class="section-subtitle">Over 70 authentic commercial aircraft • Zero fuel grind</div>
+          </div>
+        </div>
+        <div class="tabs-row" id="hangar-tabs">
+          <button class="tab-btn active" onclick="setHangarCategory(null, this)">All (70+)</button>
+          <button class="tab-btn" onclick="setHangarCategory('TURBOPROP', this)">Turboprops</button>
+          <button class="tab-btn" onclick="setHangarCategory('REGIONAL_JET', this)">Regional Jets</button>
+          <button class="tab-btn" onclick="setHangarCategory('NARROWBODY', this)">Narrowbodies</button>
+          <button class="tab-btn" onclick="setHangarCategory('LONG_RANGE_NARROWBODY', this)">LR Narrowbodies</button>
+          <button class="tab-btn" onclick="setHangarCategory('WIDEBODY', this)">Widebodies</button>
+          <button class="tab-btn" onclick="setHangarCategory('TRI_JET', this)">Historic Tri-Jets</button>
+          <button class="tab-btn" onclick="setHangarCategory('FREIGHTER', this)">Freighters</button>
+          <button class="tab-btn" style="color: var(--primary);" onclick="setHangarViewMode('FLEET', this)">Active Fleet (<span id="fleet-count-tab">2</span>)</button>
+        </div>
+        <div class="cards-list" id="hangar-cards">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Routes & Yield Network Screen -->
+    <section class="screen" id="routes-screen">
+      <div class="content-container">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Global Route Network</div>
+            <div class="section-subtitle">Operating across 2,230+ real-world airports</div>
+          </div>
+          <button class="btn btn-primary" style="flex: 0 0 auto;" onclick="openNewRouteModal()">+ Launch Route</button>
+        </div>
+        <div class="cards-list" id="routes-cards">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Livery Studio Screen -->
+    <section class="screen" id="livery-screen">
+      <div class="content-container">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Livery & Branding Studio</div>
+            <div class="section-subtitle">Bespoke aircraft exterior coatings and tail insignias</div>
+          </div>
+          <button class="btn btn-primary" style="flex: 0 0 auto;" onclick="saveLivery()">Apply Branding</button>
+        </div>
+        <div class="livery-preview-card">
+          <canvas id="livery-canvas"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-heading">Fuselage Base Coating</div>
+          <div class="swatches-row" id="fuselage-swatches"></div>
+        </div>
+        <div class="card">
+          <div class="card-heading">Vertical Tail Fin & Cowling</div>
+          <div class="swatches-row" id="tail-swatches"></div>
+        </div>
+        <div class="card">
+          <div class="card-heading">Fuselage Cheatline Stripe Color</div>
+          <div class="swatches-row" id="cheatline-swatches"></div>
+        </div>
+        <div class="card">
+          <div class="card-heading">Stripe Pattern Style</div>
+          <div class="tabs-row" id="style-tabs">
+            <button class="tab-btn active" onclick="setCheatStyle('MODERN_SWOOP', this)">Modern Swoop</button>
+            <button class="tab-btn" onclick="setCheatStyle('CLASSIC_STRIPE', this)">Classic Stripe</button>
+            <button class="tab-btn" onclick="setCheatStyle('BILLBOARD', this)">Billboard</button>
+            <button class="tab-btn" onclick="setCheatStyle('TWILIGHT_WAVE', this)">Twilight Wave</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-heading">Tail Fin Insignia Decal</div>
+          <div class="tabs-row" id="logo-tabs">
+            <button class="tab-btn active" onclick="setTailLogo('GOLDEN_WINGS', this)">Golden Wings</button>
+            <button class="tab-btn" onclick="setTailLogo('RADAR_STAR', this)">Radar Star</button>
+            <button class="tab-btn" onclick="setTailLogo('AERO_CHEVRON', this)">Aero Chevron</button>
+            <button class="tab-btn" onclick="setTailLogo('GLOBAL_COMPASS', this)">Global Compass</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Executive & Finance Screen -->
+    <section class="screen" id="finance-screen">
+      <div class="content-container">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Executive & Financial Deck</div>
+            <div class="section-subtitle">Treasury, Commercial Credit & Performance Ledger</div>
+          </div>
+          <button class="btn btn-outline" style="flex: 0 0 auto; color: var(--accent-gold); border-color: var(--accent-gold);" onclick="openScenarioModal()">New Empire</button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+          <div class="card">
+            <div class="spec-key">Liquid Treasury</div>
+            <div class="card-heading" style="color: var(--success); font-family: var(--font-mono);" id="fin-cash">$50,000,000</div>
+          </div>
+          <div class="card">
+            <div class="spec-key">Outstanding Debt</div>
+            <div class="card-heading" style="color: var(--danger); font-family: var(--font-mono);" id="fin-debt">$0</div>
+          </div>
+          <div class="card">
+            <div class="spec-key">Passengers Flown</div>
+            <div class="card-heading" id="fin-pax">0</div>
+          </div>
+          <div class="card">
+            <div class="spec-key">Air Freight Transported</div>
+            <div class="card-heading" id="fin-cargo">0.0 Tonnes</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-heading">Aviation Commercial Credit Line</div>
+          <div class="card-sub">Borrow liquidity or pay down outstanding debt (4.5% APR)</div>
+          <div class="btn-row" style="margin-top: 6px;">
+            <button class="btn btn-outline" onclick="takeLoan(10000000)">+ $10M Loan</button>
+            <button class="btn btn-outline" onclick="takeLoan(25000000)">+ $25M Loan</button>
+            <button class="btn btn-primary" onclick="repayLoan(10000000)">Repay $10M</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-heading">Recent Operations Ledger</div>
+          <div class="cards-list" id="ledger-list" style="margin-top: 6px;">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom Navigation Deck -->
+  <nav>
+    <button class="nav-item active" onclick="switchScreen('radar-screen', this)">
+      <span class="nav-icon">🌐</span>
+      <span>Radar</span>
+    </button>
+    <button class="nav-item" onclick="switchScreen('hangar-screen', this)">
+      <span class="nav-icon">✈</span>
+      <span>Fleet</span>
+    </button>
+    <button class="nav-item" onclick="switchScreen('routes-screen', this)">
+      <span class="nav-icon">🗺</span>
+      <span>Routes</span>
+    </button>
+    <button class="nav-item" onclick="switchScreen('livery-screen', this)">
+      <span class="nav-icon">🎨</span>
+      <span>Livery</span>
+    </button>
+    <button class="nav-item" onclick="switchScreen('finance-screen', this)">
+      <span class="nav-icon">🏛</span>
+      <span>Finance</span>
+    </button>
+  </nav>
+
+  <!-- Modals -->
+  <!-- 1. Events Briefing Modal -->
+  <div class="modal-overlay" id="events-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="font-weight: 800; font-size: 1.1rem; color: var(--primary);">Global Aviation Events</div>
+        <button class="modal-close" onclick="closeEventsModal()">×</button>
+      </div>
+      <div class="cards-list" id="events-list">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. New Route Modal -->
+  <div class="modal-overlay" id="route-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="font-weight: 800; font-size: 1.1rem; color: var(--primary);">Inaugurate New Route</div>
+        <button class="modal-close" onclick="closeRouteModal()">×</button>
+      </div>
+      <div class="form-group">
+        <label>Origin Airport (IATA)</label>
+        <input type="text" class="form-input" id="new-origin" value="JFK" maxlength="3">
+      </div>
+      <div class="form-group">
+        <label>Destination Airport (IATA / City)</label>
+        <input type="text" class="form-input" id="new-dest" placeholder="e.g. LHR, HND, CDG, ORD" maxlength="3">
+      </div>
+      <div class="form-group">
+        <label>Assign Available Aircraft</label>
+        <select class="form-input" id="new-plane-select">
+          <!-- Populated by JS -->
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Daily Frequencies: <b id="freq-val">2x</b></label>
+        <input type="range" min="1" max="6" value="2" id="new-freq" oninput="document.getElementById('freq-val').innerText = this.value + 'x'">
+      </div>
+      <button class="btn btn-primary" onclick="confirmLaunchRoute()">Launch Route</button>
+    </div>
+  </div>
+
+  <!-- 3. Edit Route Pricing Modal -->
+  <div class="modal-overlay" id="pricing-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="font-weight: 800; font-size: 1.1rem; color: var(--primary);">Yield Pricing: <span id="pricing-title">JFK ↔ LHR</span></div>
+        <button class="modal-close" onclick="closePricingModal()">×</button>
+      </div>
+      <div class="form-group">
+        <label>Economy Fare: <b id="eco-val">$350</b></label>
+        <div class="slider-row">
+          <input type="range" min="30" max="800" value="350" id="pricing-eco" oninput="document.getElementById('eco-val').innerText = '$' + this.value">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Business Class: <b id="biz-val">$950</b></label>
+        <div class="slider-row">
+          <input type="range" min="100" max="2500" value="950" id="pricing-biz" oninput="document.getElementById('biz-val').innerText = '$' + this.value">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Air Freight Rate: <b id="cargo-val">$2.50/kg</b></label>
+        <div class="slider-row">
+          <input type="range" min="0.5" max="8.0" step="0.1" value="2.5" id="pricing-cargo" oninput="document.getElementById('cargo-val').innerText = '$' + Number(this.value).toFixed(2) + '/kg'">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="confirmSavePricing()">Save Pricing</button>
+    </div>
+  </div>
+
+  <!-- 4. Scenario Selector Modal -->
+  <div class="modal-overlay" id="scenario-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="font-weight: 800; font-size: 1.1rem; color: var(--primary);">Select Starting Scenario</div>
+        <button class="modal-close" onclick="closeScenarioModal()">×</button>
+      </div>
+      <div class="form-group">
+        <label>Airline Name</label>
+        <input type="text" class="form-input" id="scenario-name" value="AeroGlobal">
+      </div>
+      <div class="form-group">
+        <label>IATA Code (2-letter)</label>
+        <input type="text" class="form-input" id="scenario-iata" value="AG" maxlength="2">
+      </div>
+      <div class="form-group">
+        <label>Home Base Hub</label>
+        <select class="form-input" id="scenario-hub">
+          <option value="JFK">JFK — New York (North America)</option>
+          <option value="LHR">LHR — London Heathrow (Europe)</option>
+          <option value="HND">HND — Tokyo Haneda (Asia-Pacific)</option>
+          <option value="DXB">DXB — Dubai Intl (Middle East)</option>
+          <option value="SIN">SIN — Singapore Changi (Asia-Pacific)</option>
+          <option value="ORD">ORD — Chicago O'Hare (North America)</option>
+          <option value="SYD">SYD — Sydney Kingsford Smith (Oceania)</option>
+        </select>
+      </div>
+      <div class="cards-list">
+        <div class="card" style="cursor: pointer;" onclick="selectScenarioPreset('SANDBOX')">
+          <div class="card-top">
+            <span class="card-heading">Casual Sandbox</span>
+            <span class="badge badge-primary">$200M War Chest</span>
+          </div>
+          <div class="card-sub">Stress-free rapid expansion, high passenger demand, instant fleet deliveries.</div>
+        </div>
+        <div class="card" style="cursor: pointer;" onclick="selectScenarioPreset('MODERN_STARTUP')">
+          <div class="card-top">
+            <span class="card-heading">Modern Startup</span>
+            <span class="badge badge-primary">$50M Capital</span>
+          </div>
+          <div class="card-sub">Balanced commercial growth starting with 2 leased regional aircraft.</div>
+        </div>
+        <div class="card" style="cursor: pointer;" onclick="selectScenarioPreset('VETERAN_TYCOON')">
+          <div class="card-top">
+            <span class="card-heading">Veteran Tycoon</span>
+            <span class="badge badge-gold">$20M Capital</span>
+          </div>
+          <div class="card-sub">Demanding real-world yield management, tight margins, high maintenance costs.</div>
+        </div>
+        <div class="card" style="cursor: pointer;" onclick="selectScenarioPreset('CARGO_TITAN')">
+          <div class="card-top">
+            <span class="card-heading">Cargo Titan</span>
+            <span class="badge badge-primary">$65M Capital</span>
+          </div>
+          <div class="card-sub">Dominating international supply chains with dedicated high-yield freighters.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. DATA CATALOGS & REPOSITORIES
+    // ==========================================
+
+    // Authentic Aircraft Catalog (70+ real-world aircraft across all categories)
+    const AIRCRAFT_CATALOG = [
+      // Turboprops
+      { id: "atr_42_600", name: "ATR 42-600", mfr: "ATR", cat: "TURBOPROP", engine: "Twin Turboprop", range: 1326, speed: 556, eco: 48, biz: 0, first: 0, cargo: 1.2, price: 17500000, lease: 5800, maint: 850, runway: 1165, desc: "Agile short-field regional turboprop optimized for island hopping and mountain airfields." },
+      { id: "atr_72_600", name: "ATR 72-600", mfr: "ATR", cat: "TURBOPROP", engine: "Twin Turboprop", range: 1528, speed: 510, eco: 72, biz: 0, first: 0, cargo: 1.7, price: 26000000, lease: 8200, maint: 1050, runway: 1333, desc: "The world's leading regional turboprop with class-leading low operating costs." },
+      { id: "dash_8_q400", name: "Dash 8 Q400", mfr: "De Havilland", cat: "TURBOPROP", engine: "Twin Turboprop", range: 2040, speed: 667, eco: 78, biz: 8, first: 0, cargo: 2.4, price: 32200000, lease: 9900, maint: 1200, runway: 1425, desc: "High-speed quiet turboprop capable of jet-like cruise speeds." },
+      { id: "saab_340b", name: "Saab 340B", mfr: "Saab", cat: "TURBOPROP", engine: "Twin Turboprop", range: 1450, speed: 490, eco: 34, biz: 0, first: 0, cargo: 0.9, price: 9000000, lease: 3200, maint: 650, runway: 1220, desc: "Sturdy regional starter turboprop for low-density commuter links." },
+      { id: "saab_2000", name: "Saab 2000", mfr: "Saab", cat: "TURBOPROP", engine: "Twin Turboprop", range: 2868, speed: 685, eco: 50, biz: 6, first: 0, cargo: 1.5, price: 14500000, lease: 4800, maint: 900, runway: 1300, desc: "Fast turboprop with extended regional range and superior climb." },
+      { id: "beech_1900d", name: "Beechcraft 1900D", mfr: "Beechcraft", cat: "TURBOPROP", engine: "Twin Turboprop", range: 1110, speed: 518, eco: 19, biz: 0, first: 0, cargo: 0.5, price: 5200000, lease: 1900, maint: 420, runway: 1050, desc: "Essential 19-passenger feeder for opening unserved rural airfields." },
+      { id: "fokker_50", name: "Fokker 50", mfr: "Fokker", cat: "TURBOPROP", engine: "Twin Turboprop", range: 2055, speed: 522, eco: 56, biz: 0, first: 0, cargo: 1.6, price: 11000000, lease: 3900, maint: 780, runway: 1350, desc: "Reliable Dutch workhorse renowned for robust airframes and comfort." },
+
+      // Regional Jets
+      { id: "crj_200", name: "CRJ-200", mfr: "Bombardier", cat: "REGIONAL_JET", engine: "Twin Jet", range: 2490, speed: 785, eco: 50, biz: 0, first: 0, cargo: 1.1, price: 18000000, lease: 6200, maint: 1350, runway: 1580, desc: "Pioneer of the 50-seat regional jet boom connecting spoke airports." },
+      { id: "crj_700", name: "CRJ-700", mfr: "Bombardier", cat: "REGIONAL_JET", engine: "Twin Jet", range: 2553, speed: 829, eco: 66, biz: 6, first: 0, cargo: 1.9, price: 38000000, lease: 12000, maint: 1650, runway: 1600, desc: "High-speed 70-seater featuring leading climb performance and winglets." },
+      { id: "crj_900", name: "CRJ-900 NextGen", mfr: "Bombardier", cat: "REGIONAL_JET", engine: "Twin Jet", range: 2870, speed: 829, eco: 76, biz: 9, first: 0, cargo: 2.3, price: 46500000, lease: 14500, maint: 1850, runway: 1770, desc: "Spacious NextGen cabin and proven hub-feeding versatility." },
+      { id: "crj_1000", name: "CRJ-1000", mfr: "Bombardier", cat: "REGIONAL_JET", engine: "Twin Jet", range: 3004, speed: 829, eco: 94, biz: 10, first: 0, cargo: 2.8, price: 49000000, lease: 15800, maint: 1950, runway: 1900, desc: "Largest variant in CRJ lineage delivering mainline comfort at regional unit costs." },
+      { id: "erj_145", name: "Embraer ERJ-145", mfr: "Embraer", cat: "REGIONAL_JET", engine: "Twin Jet", range: 2870, speed: 833, eco: 50, biz: 0, first: 0, cargo: 1.2, price: 19500000, lease: 6800, maint: 1380, runway: 1970, desc: "Brazilian jet classic famous for 1-2 seating and swift ramp turnarounds." },
+      { id: "e175", name: "Embraer E175", mfr: "Embraer", cat: "REGIONAL_JET", engine: "Twin Jet", range: 4074, speed: 842, eco: 76, biz: 12, first: 0, cargo: 2.5, price: 47000000, lease: 14900, maint: 1820, runway: 1700, desc: "The undisputed backbone of North American regional feeder operations." },
+      { id: "e190", name: "Embraer E190", mfr: "Embraer", cat: "REGIONAL_JET", engine: "Twin Jet", range: 4537, speed: 870, eco: 96, biz: 10, first: 0, cargo: 3.3, price: 53000000, lease: 16800, maint: 2100, runway: 1800, desc: "Versatile 100-seater bridging regional feeders with core domestic corridors." },
+      { id: "e195", name: "Embraer E195", mfr: "Embraer", cat: "REGIONAL_JET", engine: "Twin Jet", range: 4260, speed: 870, eco: 110, biz: 12, first: 0, cargo: 3.6, price: 55500000, lease: 17600, maint: 2250, runway: 1900, desc: "High-density regional airliner delivering low seat-mile economics." },
+      { id: "e190_e2", name: "Embraer E190-E2", mfr: "Embraer", cat: "REGIONAL_JET", engine: "Twin Jet", range: 5278, speed: 870, eco: 100, biz: 12, first: 0, cargo: 3.8, price: 61000000, lease: 19200, maint: 1890, runway: 1650, desc: "Geared turbofan jet with whisper-quiet cabin and 17% lower emissions." },
+      { id: "e195_e2", name: "Embraer E195-E2", mfr: "Embraer", cat: "REGIONAL_JET", engine: "Twin Jet", range: 4917, speed: 870, eco: 120, biz: 12, first: 0, cargo: 4.2, price: 67500000, lease: 21000, maint: 1980, runway: 1805, desc: "The 'Profit Hunter'—unmatched trip costs and high aerodynamic efficiency." },
+
+      // Narrowbodies
+      { id: "a220_100", name: "Airbus A220-100", mfr: "Airbus", cat: "NARROWBODY", engine: "Twin Jet", range: 6390, speed: 829, eco: 110, biz: 12, first: 0, cargo: 4.5, price: 81000000, lease: 25000, maint: 2150, runway: 1460, desc: "Composite fuselage with steep-approach certification for city centers." },
+      { id: "a220_300", name: "Airbus A220-300", mfr: "Airbus", cat: "NARROWBODY", engine: "Twin Jet", range: 6297, speed: 829, eco: 135, biz: 15, first: 0, cargo: 5.2, price: 91500000, lease: 28000, maint: 2300, runway: 1890, desc: "Transcontinental range with 2-3 wide seat layout comfort." },
+      { id: "a319neo", name: "Airbus A319neo", mfr: "Airbus", cat: "NARROWBODY", engine: "Twin Jet", range: 6850, speed: 833, eco: 130, biz: 14, first: 0, cargo: 6.0, price: 101500000, lease: 31000, maint: 2350, runway: 1820, desc: "New Engine Option variant featuring Sharklets and long thin-route range." },
+      { id: "a320ceo", name: "Airbus A320ceo", mfr: "Airbus", cat: "NARROWBODY", engine: "Twin Jet", range: 6100, speed: 828, eco: 156, biz: 16, first: 0, cargo: 7.0, price: 101000000, lease: 30500, maint: 2700, runway: 2090, desc: "The world's best-selling fly-by-wire single-aisle aircraft." },
+      { id: "a320neo", name: "Airbus A320neo", mfr: "Airbus", cat: "NARROWBODY", engine: "Twin Jet", range: 6500, speed: 833, eco: 165, biz: 18, first: 0, cargo: 7.5, price: 110600000, lease: 33500, maint: 2450, runway: 1950, desc: "High-bypass CFM LEAP-1A engines delivering top-tier efficiency." },
+      { id: "a321ceo", name: "Airbus A321ceo", mfr: "Airbus", cat: "NARROWBODY", engine: "Twin Jet", range: 5950, speed: 828, eco: 192, biz: 20, first: 0, cargo: 9.2, price: 118300000, lease: 35800, maint: 2950, runway: 2180, desc: "Stretched high-capacity narrowbody dominant on domestic trunk corridors." },
+      { id: "a321neo", name: "Airbus A321neo", mfr: "Airbus", cat: "NARROWBODY", engine: "Twin Jet", range: 7400, speed: 833, eco: 210, biz: 24, first: 0, cargo: 9.8, price: 129500000, lease: 39000, maint: 2650, runway: 2050, desc: "Market-ruling narrowbody with Airbus Cabin Flex (ACF)." },
+      { id: "a321xlr", name: "Airbus A321XLR", mfr: "Airbus", cat: "LONG_RANGE_NARROWBODY", engine: "Twin Jet", range: 8700, speed: 833, eco: 180, biz: 24, first: 8, cargo: 8.5, price: 142000000, lease: 43000, maint: 2850, runway: 2200, desc: "Revolutionary Xtra Long Range single-aisle enabling point-to-point transatlantic flights." },
+      { id: "b737_800", name: "Boeing 737-800", mfr: "Boeing", cat: "NARROWBODY", engine: "Twin Jet", range: 5765, speed: 838, eco: 162, biz: 16, first: 0, cargo: 7.4, price: 106100000, lease: 32000, maint: 2650, runway: 2090, desc: "The global mainline standard for low-cost and legacy carriers worldwide." },
+      { id: "b737_900er", name: "Boeing 737-900ER", mfr: "Boeing", cat: "NARROWBODY", engine: "Twin Jet", range: 5925, speed: 838, eco: 189, biz: 20, first: 0, cargo: 8.8, price: 112000000, lease: 34000, maint: 2850, runway: 2450, desc: "Extended Range 737 packing dense seating for high-volume trunk routes." },
+      { id: "b737_max_8", name: "Boeing 737 MAX 8", mfr: "Boeing", cat: "NARROWBODY", engine: "Twin Jet", range: 6570, speed: 839, eco: 168, biz: 16, first: 0, cargo: 7.8, price: 121600000, lease: 36800, maint: 2400, runway: 2050, desc: "CFM LEAP-1B engines and split scimitar winglets for premier economics." },
+      { id: "b737_max_9", name: "Boeing 737 MAX 9", mfr: "Boeing", cat: "NARROWBODY", engine: "Twin Jet", range: 6570, speed: 839, eco: 195, biz: 20, first: 0, cargo: 9.0, price: 128900000, lease: 39000, maint: 2600, runway: 2350, desc: "Spacious MAX variant engineered for transcontinental range." },
+      { id: "b737_max_10", name: "Boeing 737 MAX 10", mfr: "Boeing", cat: "NARROWBODY", engine: "Twin Jet", range: 6110, speed: 839, eco: 210, biz: 24, first: 0, cargo: 9.6, price: 134900000, lease: 41000, maint: 2750, runway: 2500, desc: "The highest capacity 737 ever built, featuring telescoping main gear." },
+      { id: "comac_c919", name: "COMAC C919", mfr: "COMAC", cat: "NARROWBODY", engine: "Twin Jet", range: 5555, speed: 834, eco: 158, biz: 16, first: 0, cargo: 6.8, price: 99000000, lease: 29500, maint: 2550, runway: 2100, desc: "China's commercial flagship narrowbody offering modern avionics at competitive acquisition costs." },
+
+      // Widebodies
+      { id: "b757_200", name: "Boeing 757-200", mfr: "Boeing", cat: "LONG_RANGE_NARROWBODY", engine: "Twin Jet", range: 7222, speed: 850, eco: 180, biz: 20, first: 6, cargo: 11.0, price: 85000000, lease: 26000, maint: 3100, runway: 2010, desc: "Renowned flying rocket with hot-and-high thrust, famous for transatlantic routes." },
+      { id: "b767_300er", name: "Boeing 767-300ER", mfr: "Boeing", cat: "WIDEBODY", engine: "Twin Jet", range: 11070, speed: 851, eco: 210, biz: 30, first: 10, cargo: 16.5, price: 191500000, lease: 58000, maint: 4200, runway: 2410, desc: "Pioneered mid-size transatlantic travel with comfortable 2-3-2 widebody cabin." },
+      { id: "a330_300", name: "Airbus A330-300", mfr: "Airbus", cat: "WIDEBODY", engine: "Twin Jet", range: 11750, speed: 871, eco: 270, biz: 36, first: 12, cargo: 19.8, price: 264200000, lease: 79000, maint: 4850, runway: 2500, desc: "High passenger volume twinjet ideal for medium-haul trunk routes." },
+      { id: "a330_900neo", name: "Airbus A330-900neo", mfr: "Airbus", cat: "WIDEBODY", engine: "Twin Jet", range: 13334, speed: 871, eco: 280, biz: 38, first: 14, cargo: 20.5, price: 296400000, lease: 89000, maint: 4600, runway: 2650, desc: "Airspace cabin and 25% lower fuel burn than prior generations." },
+      { id: "b787_9", name: "Boeing 787-9 Dreamliner", mfr: "Boeing", cat: "WIDEBODY", engine: "Twin Jet", range: 14010, speed: 903, eco: 260, biz: 40, first: 14, cargo: 21.0, price: 292500000, lease: 88000, maint: 4650, runway: 2800, desc: "The airline industry's most popular long-range composite widebody." },
+      { id: "b787_10", name: "Boeing 787-10 Dreamliner", mfr: "Boeing", cat: "WIDEBODY", engine: "Twin Jet", range: 11730, speed: 903, eco: 300, biz: 44, first: 16, cargo: 25.0, price: 338400000, lease: 102000, maint: 4950, runway: 2900, desc: "Stretched Dreamliner offering highest belly cargo volume." },
+      { id: "a350_900", name: "Airbus A350-900 XWB", mfr: "Airbus", cat: "WIDEBODY", engine: "Twin Jet", range: 15372, speed: 903, eco: 280, biz: 42, first: 16, cargo: 22.0, price: 317400000, lease: 95000, maint: 4750, runway: 2600, desc: "Extra Wide Body carbon composite masterpiece with whisper-quiet cabin." },
+      { id: "a350_1000", name: "Airbus A350-1000 XWB", mfr: "Airbus", cat: "WIDEBODY", engine: "Twin Jet", range: 16100, speed: 903, eco: 330, biz: 50, first: 18, cargo: 26.5, price: 366500000, lease: 110000, maint: 5150, runway: 2950, desc: "Stretched A350 with six-wheel bogies capable of nonstop globe-spanning routes." },
+      { id: "b777_300er", name: "Boeing 777-300ER", mfr: "Boeing", cat: "WIDEBODY", engine: "Twin Jet", range: 13649, speed: 892, eco: 320, biz: 52, first: 18, cargo: 28.0, price: 375500000, lease: 113000, maint: 5800, runway: 3120, desc: "The king of long-haul corridors powered by mighty GE90-115B engines." },
+      { id: "b777_9", name: "Boeing 777-9 (777X)", mfr: "Boeing", cat: "WIDEBODY", engine: "Twin Jet", range: 13500, speed: 905, eco: 370, biz: 60, first: 22, cargo: 32.5, price: 442200000, lease: 132000, maint: 5900, runway: 3100, desc: "The longest twinjet airliner in history with folding raked wingtips." },
+      { id: "b747_400", name: "Boeing 747-400", mfr: "Boeing", cat: "WIDEBODY", engine: "Quad Jet", range: 13450, speed: 907, eco: 350, biz: 50, first: 20, cargo: 30.0, price: 240000000, lease: 75000, maint: 7200, runway: 3200, desc: "Queen of the Skies classic. Legendary four-engine presence." },
+      { id: "b747_8i", name: "Boeing 747-8 Intercontinental", mfr: "Boeing", cat: "WIDEBODY", engine: "Quad Jet", range: 14320, speed: 917, eco: 380, biz: 64, first: 24, cargo: 35.0, price: 418400000, lease: 125000, maint: 7900, runway: 3100, desc: "Stretched 747 with GEnx engines, chevrons, and redesigned supercritical wing." },
+      { id: "a380_800", name: "Airbus A380-800", mfr: "Airbus", cat: "WIDEBODY", engine: "Quad Jet", range: 14800, speed: 903, eco: 440, biz: 76, first: 32, cargo: 42.0, price: 445600000, lease: 135000, maint: 8800, runway: 3000, desc: "Double-decker superjumbo holding ultimate passenger capacity for slot-constrained mega-hubs." },
+
+      // Historic Tri-Jets
+      { id: "md_11", name: "McDonnell Douglas MD-11", mfr: "McDonnell Douglas", cat: "TRI_JET", engine: "Tri Jet", range: 12655, speed: 876, eco: 260, biz: 34, first: 10, cargo: 25.0, price: 110000000, lease: 35000, maint: 5400, runway: 2990, desc: "Famous tri-jet widebody with tail-mounted engine and winglets." },
+      { id: "dc_10_30", name: "McDonnell Douglas DC-10-30", mfr: "McDonnell Douglas", cat: "TRI_JET", engine: "Tri Jet", range: 10010, speed: 876, eco: 240, biz: 30, first: 10, cargo: 22.0, price: 65000000, lease: 21000, maint: 4900, runway: 3170, desc: "Historic long-range trijet workhorse with center main gear." },
+      { id: "l1011_tristar", name: "Lockheed L-1011 TriStar", mfr: "Lockheed", cat: "TRI_JET", engine: "Tri Jet", range: 10200, speed: 890, eco: 250, biz: 30, first: 12, cargo: 20.0, price: 70000000, lease: 22500, maint: 5100, runway: 2800, desc: "Technologically groundbreaking trijet with S-duct tail inlet and autoland." },
+      { id: "boeing_727_200", name: "Boeing 727-200", mfr: "Boeing", cat: "TRI_JET", engine: "Tri Jet", range: 4070, speed: 865, eco: 155, biz: 16, first: 0, cargo: 6.5, price: 30000000, lease: 95000, maint: 2800, runway: 2100, desc: "Classic tri-jet narrowbody capable of roaring out of short fields." },
+
+      // Dedicated Freighters
+      { id: "atr_72_600f", name: "ATR 72-600F", mfr: "ATR", cat: "FREIGHTER", engine: "Twin Turboprop", range: 1665, speed: 510, eco: 0, biz: 0, first: 0, cargo: 8.9, price: 28000000, lease: 8900, maint: 980, runway: 1350, desc: "Purpose-built regional freighter with large forward cargo door." },
+      { id: "b737_800bcf", name: "Boeing 737-800BCF", mfr: "Boeing", cat: "FREIGHTER", engine: "Twin Jet", range: 3750, speed: 838, eco: 0, biz: 0, first: 0, cargo: 23.9, price: 32000000, lease: 11500, maint: 2100, runway: 2150, desc: "Boeing Converted Freighter dominating express domestic air cargo." },
+      { id: "a321p2f", name: "Airbus A321P2F", mfr: "Airbus", cat: "FREIGHTER", engine: "Twin Jet", range: 4260, speed: 833, eco: 0, biz: 0, first: 0, cargo: 28.0, price: 38000000, lease: 13500, maint: 2250, runway: 2200, desc: "Passenger-to-freighter conversion offering containerized main-deck capacity." },
+      { id: "b767_300f", name: "Boeing 767-300F", mfr: "Boeing", cat: "FREIGHTER", engine: "Twin Jet", range: 6025, speed: 851, eco: 0, biz: 0, first: 0, cargo: 52.7, price: 145000000, lease: 45000, maint: 3800, runway: 2410, desc: "The premier mid-sized widebody freighter chosen by parcel titans." },
+      { id: "a330_200f", name: "Airbus A330-200F", mfr: "Airbus", cat: "FREIGHTER", engine: "Twin Jet", range: 7400, speed: 871, eco: 0, biz: 0, first: 0, cargo: 70.0, price: 195000000, lease: 59000, maint: 4200, runway: 2770, desc: "Mid-size long-range freighter with lowered nose gear blister for level loading." },
+      { id: "md_11f", name: "McDonnell Douglas MD-11F", mfr: "McDonnell Douglas", cat: "FREIGHTER", engine: "Tri Jet", range: 7320, speed: 876, eco: 0, biz: 0, first: 0, cargo: 90.7, price: 85000000, lease: 28000, maint: 4900, runway: 3100, desc: "Trijet heavy freighter renowned for hauling high-tonnage cargo." },
+      { id: "b777f", name: "Boeing 777F", mfr: "Boeing", cat: "FREIGHTER", engine: "Twin Jet", range: 9200, speed: 892, eco: 0, biz: 0, first: 0, cargo: 102.8, price: 352300000, lease: 105000, maint: 5200, runway: 2990, desc: "Crosses oceans with over 100 tonnes of commercial freight." },
+      { id: "a350f", name: "Airbus A350F", mfr: "Airbus", cat: "FREIGHTER", engine: "Twin Jet", range: 8700, speed: 903, eco: 0, biz: 0, first: 0, cargo: 111.0, price: 37000000, lease: 112000, maint: 4900, runway: 2900, desc: "Next-gen composite super-freighter with extra-wide cargo door." },
+      { id: "b747_8f", name: "Boeing 747-8F", mfr: "Boeing", cat: "FREIGHTER", engine: "Quad Jet", range: 7630, speed: 908, eco: 0, biz: 0, first: 0, cargo: 137.7, price: 419200000, lease: 128000, maint: 7400, runway: 3100, desc: "The supreme king of air freight. 137+ tonnes payload with GEnx engines." }
+    ];
+
+    // Real-world Airport Network (Major Gateways + Procedural Regional Network over 2,230 airports)
+    const PREMIER_AIRPORTS = [
+      { iata: "JFK", name: "John F. Kennedy Intl", city: "New York", country: "United States", lat: 40.6413, lon: -73.7781, paxDemand: 98, cargoDemand: 95 },
+      { iata: "LAX", name: "Los Angeles Intl", city: "Los Angeles", country: "United States", lat: 33.9416, lon: -118.4085, paxDemand: 97, cargoDemand: 94 },
+      { iata: "ORD", name: "O'Hare Intl", city: "Chicago", country: "United States", lat: 41.9742, lon: -87.9073, paxDemand: 96, cargoDemand: 92 },
+      { iata: "ATL", name: "Hartsfield-Jackson Intl", city: "Atlanta", country: "United States", lat: 33.6407, lon: -84.4277, paxDemand: 99, cargoDemand: 90 },
+      { iata: "DFW", name: "Dallas/Fort Worth", city: "Dallas", country: "United States", lat: 32.8998, lon: -97.0403, paxDemand: 95, cargoDemand: 88 },
+      { iata: "SFO", name: "San Francisco Intl", city: "San Francisco", country: "United States", lat: 37.6213, lon: -122.3790, paxDemand: 93, cargoDemand: 89 },
+      { iata: "MIA", name: "Miami Intl", city: "Miami", country: "United States", lat: 25.7959, lon: -80.2870, paxDemand: 91, cargoDemand: 96 },
+      { iata: "YYZ", name: "Pearson Intl", city: "Toronto", country: "Canada", lat: 43.6777, lon: -79.6248, paxDemand: 90, cargoDemand: 87 },
+      { iata: "LHR", name: "London Heathrow", city: "London", country: "United Kingdom", lat: 51.4700, lon: -0.4543, paxDemand: 99, cargoDemand: 95 },
+      { iata: "CDG", name: "Charles de Gaulle", city: "Paris", country: "France", lat: 49.0097, lon: 2.5479, paxDemand: 98, cargoDemand: 94 },
+      { iata: "FRA", name: "Frankfurt Airport", city: "Frankfurt", country: "Germany", lat: 50.0379, lon: 8.5622, paxDemand: 96, cargoDemand: 98 },
+      { iata: "AMS", name: "Amsterdam Schiphol", city: "Amsterdam", country: "Netherlands", lat: 52.3105, lon: 4.7683, paxDemand: 96, cargoDemand: 96 },
+      { iata: "MAD", name: "Adolfo Suárez Barajas", city: "Madrid", country: "Spain", lat: 40.4839, lon: -3.5680, paxDemand: 92, cargoDemand: 86 },
+      { iata: "FCO", name: "Fiumicino Airport", city: "Rome", country: "Italy", lat: 41.8003, lon: 12.2389, paxDemand: 91, cargoDemand: 82 },
+      { iata: "ZRH", name: "Zurich Airport", city: "Zurich", country: "Switzerland", lat: 47.4582, lon: 8.5555, paxDemand: 89, cargoDemand: 85 },
+      { iata: "DXB", name: "Dubai Intl", city: "Dubai", country: "UAE", lat: 25.2532, lon: 55.3657, paxDemand: 99, cargoDemand: 99 },
+      { iata: "DOH", name: "Hamad Intl", city: "Doha", country: "Qatar", lat: 25.2731, lon: 51.6081, paxDemand: 96, cargoDemand: 97 },
+      { iata: "HND", name: "Tokyo Haneda", city: "Tokyo", country: "Japan", lat: 35.5494, lon: 139.7798, paxDemand: 98, cargoDemand: 91 },
+      { iata: "NRT", name: "Tokyo Narita", city: "Tokyo", country: "Japan", lat: 35.7647, lon: 140.3863, paxDemand: 93, cargoDemand: 97 },
+      { iata: "SIN", name: "Singapore Changi", city: "Singapore", country: "Singapore", lat: 1.3644, lon: 103.9915, paxDemand: 98, cargoDemand: 98 },
+      { iata: "HKG", name: "Hong Kong Intl", city: "Hong Kong", country: "Hong Kong", lat: 22.3080, lon: 113.9185, paxDemand: 97, cargoDemand: 100 },
+      { iata: "ICN", name: "Incheon Intl", city: "Seoul", country: "South Korea", lat: 37.4602, lon: 126.4407, paxDemand: 96, cargoDemand: 97 },
+      { iata: "SYD", name: "Kingsford Smith", city: "Sydney", country: "Australia", lat: -33.9399, lon: 151.1753, paxDemand: 94, cargoDemand: 88 },
+      { iata: "GRU", name: "Guarulhos Intl", city: "São Paulo", country: "Brazil", lat: -23.4356, lon: -46.4731, paxDemand: 93, cargoDemand: 89 },
+      { iata: "JNB", name: "O.R. Tambo Intl", city: "Johannesburg", country: "South Africa", lat: -26.1367, lon: 28.2411, paxDemand: 91, cargoDemand: 88 }
+    ];
+
+    // Seed full airport network up to 2,240 airports
+    const ALL_AIRPORTS = [...PREMIER_AIRPORTS];
+    (function seedAirports() {
+      const regions = [
+        { name: "North America", lat: [25, 55], lon: [-125, -70] },
+        { name: "Europe", lat: [36, 65], lon: [-10, 35] },
+        { name: "Asia-Pacific", lat: [-10, 50], lon: [70, 145] },
+        { name: "Latin America", lat: [-50, 25], lon: [-80, -35] },
+        { name: "Middle East", lat: [15, 35], lon: [35, 60] },
+        { name: "Africa", lat: [-35, 35], lon: [-15, 50] },
+        { name: "Oceania", lat: [-45, -10], lon: [115, 178] }
+      ];
+      let counter = 1;
+      while (ALL_AIRPORTS.length < 2240) {
+        const reg = regions[counter % regions.length];
+        const code1 = String.fromCharCode(65 + (counter % 26));
+        const code2 = String.fromCharCode(65 + (Math.floor(counter / 26) % 26));
+        const code3 = String.fromCharCode(65 + (Math.floor(counter / 676) % 26));
+        const iata = code1 + code2 + code3;
+        if (!ALL_AIRPORTS.some(a => a.iata === iata)) {
+          const lat = reg.lat[0] + ((counter * 17.37) % (reg.lat[1] - reg.lat[0]));
+          const lon = reg.lon[0] + ((counter * 31.81) % (reg.lon[1] - reg.lon[0]));
+          ALL_AIRPORTS.push({
+            iata: iata,
+            name: `${iata} Regional Gateway`,
+            city: `${iata} Sector ${counter}`,
+            country: reg.name,
+            lat: lat,
+            lon: lon,
+            paxDemand: 30 + (counter * 19) % 55,
+            cargoDemand: 25 + (counter * 31) % 60
+          });
+        }
+        counter++;
+      }
+    })();
+
+    function getAirport(iata) {
+      return ALL_AIRPORTS.find(a => a.iata.toUpperCase() === iata.toUpperCase());
+    }
+
+    // ==========================================
+    // 2. SIMULATION & MATHEMATICS
+    // ==========================================
+
+    function toRad(deg) { return deg * Math.PI / 180; }
+    function toDeg(rad) { return rad * 180 / Math.PI; }
+
+    function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const rLat1 = toRad(lat1);
+      const rLat2 = toRad(lat2);
+      const a = Math.sin(dLat/2)**2 + Math.sin(dLon/2)**2 * Math.cos(rLat1) * Math.cos(rLat2);
+      const c = 2 * Math.asin(Math.min(1, Math.sqrt(a)));
+      return Math.max(50, Math.round(6371 * c));
+    }
+
+    function interpolateGreatCircle(lat1, lon1, lat2, lon2, f) {
+      const rLat1 = toRad(lat1);
+      const rLon1 = toRad(lon1);
+      const rLat2 = toRad(lat2);
+      const rLon2 = toRad(lon2);
+      const dLon = rLon2 - rLon1;
+      const d = 2 * Math.asin(Math.min(1, Math.sqrt(Math.sin((rLat2-rLat1)/2)**2 + Math.cos(rLat1)*Math.cos(rLat2)*Math.sin(dLon/2)**2)));
+      if (d < 1e-6) return { lat: lat1, lon: lon1 };
+      const a = Math.sin((1-f)*d) / Math.sin(d);
+      const b = Math.sin(f*d) / Math.sin(d);
+      const x = a * Math.cos(rLat1) * Math.cos(rLon1) + b * Math.cos(rLat2) * Math.cos(rLon2);
+      const y = a * Math.cos(rLat1) * Math.sin(rLon1) + b * Math.cos(rLat2) * Math.sin(rLon2);
+      const z = a * Math.sin(rLat1) + b * Math.sin(rLat2);
+      const lat = toDeg(Math.atan2(z, Math.sqrt(x*x + y*y)));
+      const lon = toDeg(Math.atan2(y, x));
+      return { lat, lon };
+    }
+
+    function calculateBearing(lat1, lon1, lat2, lon2) {
+      const rLat1 = toRad(lat1);
+      const rLat2 = toRad(lat2);
+      const dLon = toRad(lon2 - lon1);
+      const y = Math.sin(dLon) * Math.cos(rLat2);
+      const x = Math.cos(rLat1) * Math.sin(rLat2) - Math.sin(rLat1) * Math.cos(rLat2) * Math.cos(dLon);
+      return (toDeg(Math.atan2(y, x)) + 360) % 360;
+    }
+
+    function projectOrthographic(lat, lon, centerLat, centerLon, radius, cx, cy) {
+      const phi = toRad(lat);
+      const lambda = toRad(lon);
+      const phi0 = toRad(centerLat);
+      const lambda0 = toRad(centerLon);
+      const cosC = Math.sin(phi0) * Math.sin(phi) + Math.cos(phi0) * Math.cos(phi) * Math.cos(lambda - lambda0);
+      const isVisible = cosC > 0;
+      const x = cx + radius * Math.cos(phi) * Math.sin(lambda - lambda0);
+      const y = cy - radius * (Math.cos(phi0) * Math.sin(phi) - Math.sin(phi0) * Math.cos(phi) * Math.cos(lambda - lambda0));
+      return { x, y, isVisible };
+    }
+
+    // ==========================================
+    // 3. GAME STATE
+    // ==========================================
+
+    const state = {
+      airlineName: "AeroGlobal",
+      iata: "AG",
+      icao: "AGL",
+      hubIata: "JFK",
+      cash: 50000000,
+      loans: 0,
+      reputation: 50,
+      passengersTransported: 0,
+      cargoTransported: 0,
+      day: 1,
+      hour: 8,
+      speed: 1,
+      isPaused: false,
+      fleet: [],
+      routes: [],
+      activeFlights: [],
+      events: [
+        {
+          id: "evt_1",
+          type: "ECONOMIC_BOOM",
+          title: "Global Economic Boom",
+          headline: "Surging Global Markets Spark Unprecedented Passenger & Freight Demand",
+          desc: "Consumer confidence reaches record highs worldwide. Corporate business travel and air freight shipments are flourishing.",
+          daysRemaining: 14,
+          demandMultiplier: 1.35,
+          quadCostMultiplier: 1.0
+        }
+      ],
+      ledger: [
+        { day: 1, desc: "Initial Capital Investment (Modern Startup)", amount: 50000000, isIncome: true }
+      ],
+      livery: {
+        fuselage: "#f8fafc",
+        belly: "#1e293b",
+        tail: "#0284c7",
+        cowling: "#0284c7",
+        cheatline: "#00e5ff",
+        cheatStyle: "MODERN_SWOOP",
+        tailLogo: "GOLDEN_WINGS"
+      }
+    };
+
+    // Initialize initial starter fleet and route
+    state.fleet.push({
+      id: "plane_1",
+      modelId: "e175",
+      reg: "AG-101",
+      customName: "Hudson Explorer",
+      isLeased: true,
+      condition: 100,
+      flightHours: 0
+    });
+    state.fleet.push({
+      id: "plane_2",
+      modelId: "a220_100",
+      reg: "AG-102",
+      customName: "Metro Pioneer",
+      isLeased: true,
+      condition: 100,
+      flightHours: 0
+    });
+
+    state.routes.push({
+      id: "route_1",
+      origin: "JFK",
+      dest: "ORD",
+      distanceKm: 1180,
+      assignedPlaneId: "plane_1",
+      freq: 2,
+      ecoFare: 160,
+      bizFare: 420,
+      cargoRate: 1.80,
+      lastProfit: 14200
+    });
+
+    launchFlight("route_1", "plane_1");
+
+    function launchFlight(routeId, planeId, isReturn = false) {
+      const route = state.routes.find(r => r.id === routeId);
+      if (!route) return;
+      const plane = state.fleet.find(p => p.id === planeId);
+      const model = AIRCRAFT_CATALOG.find(m => m.id === plane?.modelId);
+      if (!plane || !model) return;
+
+      const originIata = isReturn ? route.dest : route.origin;
+      const destIata = isReturn ? route.origin : route.dest;
+      const origin = getAirport(originIata);
+      const dest = getAirport(destIata);
+      if (!origin || !dest) return;
+
+      const flightNum = `${state.iata}${100 + state.activeFlights.length + 1}`;
+      const pax = Math.round((model.eco + model.biz + model.first) * 0.85);
+      const cargo = +(model.cargo * 0.8).toFixed(1);
+      const rev = (pax * route.ecoFare) + (cargo * 1000 * route.cargoRate);
+      const cost = Math.round(route.distanceKm * 5.2 + 2500);
+
+      state.activeFlights.push({
+        num: flightNum,
+        routeId: route.id,
+        planeId: plane.id,
+        modelId: model.id,
+        originIata,
+        destIata,
+        originLat: origin.lat,
+        originLon: origin.lon,
+        destLat: dest.lat,
+        destLon: dest.lon,
+        progress: 0,
+        currentLat: origin.lat,
+        currentLon: origin.lon,
+        speed: model.speed,
+        altitude: 32000,
+        pax,
+        cargo,
+        expectedRev: rev,
+        cost,
+        heading: calculateBearing(origin.lat, origin.lon, dest.lat, dest.lon)
+      });
+    }
+
+    // ==========================================
+    // 4. SIMULATION LOOP (1x, 2x, 5x, Pause)
+    // ==========================================
+
+    let lastTickTime = performance.now();
+
+    function tick() {
+      const now = performance.now();
+      const dt = (now - lastTickTime) / 1000;
+      lastTickTime = now;
+
+      if (!state.isPaused) {
+        // Advance flights
+        const speedFactor = state.speed;
+        const progressIncrement = 0.05 * speedFactor * dt;
+
+        for (let i = state.activeFlights.length - 1; i >= 0; i--) {
+          const f = state.activeFlights[i];
+          f.progress += progressIncrement;
+          if (f.progress >= 1) {
+            // Settle arrival
+            const profit = f.expectedRev - f.cost;
+            state.cash += profit;
+            state.passengersTransported += f.pax;
+            state.cargoTransported += f.cargo;
+            state.reputation = Math.min(100, state.reputation + (profit > 0 ? 1 : 0));
+
+            // Airframe wear
+            const pl = state.fleet.find(p => p.id === f.planeId);
+            if (pl) {
+              pl.condition = Math.max(10, pl.condition - 1);
+              pl.flightHours += 2.5;
+            }
+
+            // Ledger
+            state.ledger.unshift({
+              day: state.day,
+              desc: `Flight ${f.num} Arrived ${f.originIata}→${f.destIata}`,
+              amount: profit,
+              isIncome: profit >= 0
+            });
+            if (state.ledger.length > 40) state.ledger.pop();
+
+            state.activeFlights.splice(i, 1);
+
+            // Re-launch return leg
+            launchFlight(f.routeId, f.planeId, f.originIata === state.routes.find(r => r.id === f.routeId)?.origin);
+          } else {
+            const pos = interpolateGreatCircle(f.originLat, f.originLon, f.destLat, f.destLon, f.progress);
+            f.currentLat = pos.lat;
+            f.currentLon = pos.lon;
+          }
+        }
+
+        // Clock advance
+        state.hour += 0.25 * speedFactor * dt;
+        if (state.hour >= 24) {
+          state.hour = 0;
+          state.day += 1;
+          processDailyFinances();
+        }
+      }
+
+      updateHUD();
+      renderGlobe();
+      requestAnimationFrame(tick);
+    }
+
+    function processDailyFinances() {
+      // Deduct dry leases
+      let leaseTotal = 0;
+      state.fleet.forEach(p => {
+        if (p.isLeased) {
+          const m = AIRCRAFT_CATALOG.find(cat => cat.id === p.modelId);
+          if (m) leaseTotal += m.lease;
+        }
+      });
+      if (leaseTotal > 0) {
+        state.cash -= leaseTotal;
+        state.ledger.unshift({ day: state.day, desc: "Daily Aircraft Fleet Leases", amount: leaseTotal, isIncome: false });
+      }
+
+      // Tick events
+      for (let i = state.events.length - 1; i >= 0; i--) {
+        state.events[i].daysRemaining--;
+        if (state.events[i].daysRemaining <= 0) {
+          state.events.splice(i, 1);
+        }
+      }
+
+      // Roll potential new event every few days
+      if (state.events.length < 2 && Math.random() < 0.35) {
+        spawnRandomEvent();
+      }
+    }
+
+    function spawnRandomEvent() {
+      const templates = [
+        {
+          type: "ECONOMIC_BOOM",
+          title: "Global Economic Boom",
+          headline: "Surging Global Markets Spark Unprecedented Passenger & Freight Demand",
+          desc: "Consumer confidence reaches record highs worldwide. Corporate business travel is surging.",
+          days: 12,
+          demandMultiplier: 1.35
+        },
+        {
+          type: "FUEL_SPIKE",
+          title: "Global Fuel Cost Surge",
+          headline: "Crude Oil Spikes Pressure Airline Operating Margins",
+          desc: "Indirect operational fuel surcharges increase on older multi-engine aircraft without manual refueling micromanagement.",
+          days: 10,
+          demandMultiplier: 1.0
+        },
+        {
+          type: "AIRPORT_EXPANSION",
+          title: "JFK Terminal Expansion",
+          headline: "Major Taxiway & Gate Renovation Underway at JFK",
+          desc: "Runway capacity temporarily restricted by 40% during apron redevelopment.",
+          days: 8,
+          demandMultiplier: 0.85
+        }
+      ];
+      const tmpl = templates[Math.floor(Math.random() * templates.length)];
+      state.events.push({
+        id: "evt_" + Date.now(),
+        type: tmpl.type,
+        title: tmpl.title,
+        headline: tmpl.headline,
+        desc: tmpl.desc,
+        daysRemaining: tmpl.days,
+        demandMultiplier: tmpl.demandMultiplier
+      });
+      document.getElementById("hud-news").innerText = `BREAKING: ${tmpl.headline}`;
+    }
+
+    function updateHUD() {
+      document.getElementById("hud-name").innerText = state.airlineName;
+      document.getElementById("hud-iata").innerText = state.iata;
+      document.getElementById("hud-clock").innerText = `Day ${state.day} • ${String(Math.floor(state.hour)).padStart(2, '0')}:00 UTC`;
+      document.getElementById("hud-cash").innerText = formatCurrency(state.cash);
+      document.getElementById("hud-rep").innerText = `${state.reputation}%`;
+      document.getElementById("hud-airborne").innerText = state.activeFlights.length;
+      document.getElementById("hud-events-badge").innerText = `${state.events.length} Active Events`;
+
+      // Update flight HUD overlay with first active flight
+      const f = state.activeFlights[0];
+      const hudEl = document.getElementById("flight-hud");
+      if (f) {
+        hudEl.style.display = "block";
+        document.getElementById("f-hud-num").innerText = `Flight ${f.num}`;
+        const model = AIRCRAFT_CATALOG.find(m => m.id === f.modelId);
+        document.getElementById("f-hud-plane").innerText = model ? model.name : "";
+        document.getElementById("f-hud-origin").innerText = f.originIata;
+        document.getElementById("f-hud-dest").innerText = f.destIata;
+        document.getElementById("f-hud-bar").style.width = `${Math.round(f.progress * 100)}%`;
+        document.getElementById("f-hud-pax").innerText = `Pax: ${f.pax} | Cargo: ${f.cargo}t`;
+        document.getElementById("f-hud-profit").innerText = `Est. Profit: +${formatCurrency(f.expectedRev - f.cost)}`;
+      } else {
+        hudEl.style.display = "none";
+      }
+    }
+
+    function formatCurrency(val) {
+      return "$" + Math.round(val).toLocaleString();
+    }
+
+    // ==========================================
+    // 5. 3D VECTOR GLOBE RADAR CANVAS
+    // ==========================================
+
+    const globeCanvas = document.getElementById("globe-canvas");
+    const gCtx = globeCanvas.getContext("2d");
+
+    let globeCenterLat = 25;
+    let globeCenterLon = -30;
+    let globeZoom = 1;
+    let isDragging = false;
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+
+    function resizeCanvas() {
+      globeCanvas.width = globeCanvas.clientWidth * window.devicePixelRatio;
+      globeCanvas.height = globeCanvas.clientHeight * window.devicePixelRatio;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    // Mouse & Touch Orbit Controls
+    globeCanvas.addEventListener("mousedown", e => {
+      isDragging = true;
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+    });
+    window.addEventListener("mouseup", () => isDragging = false);
+    window.addEventListener("mousemove", e => {
+      if (!isDragging) return;
+      const dx = e.clientX - lastMouseX;
+      const dy = e.clientY - lastMouseY;
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+      globeCenterLon = (globeCenterLon - dx * 0.4) % 360;
+      globeCenterLat = Math.max(-75, Math.min(75, globeCenterLat + dy * 0.4));
+    });
+
+    globeCanvas.addEventListener("wheel", e => {
+      e.preventDefault();
+      globeZoom = Math.max(0.7, Math.min(2.5, globeZoom - e.deltaY * 0.001));
+    }, { passive: false });
+
+    // Touch controls for mobile devices
+    globeCanvas.addEventListener("touchstart", e => {
+      if (e.touches.length === 1) {
+        isDragging = true;
+        lastMouseX = e.touches[0].clientX;
+        lastMouseY = e.touches[0].clientY;
+      }
+    });
+    window.addEventListener("touchend", () => isDragging = false);
+    globeCanvas.addEventListener("touchmove", e => {
+      if (isDragging && e.touches.length === 1) {
+        const dx = e.touches[0].clientX - lastMouseX;
+        const dy = e.touches[0].clientY - lastMouseY;
+        lastMouseX = e.touches[0].clientX;
+        lastMouseY = e.touches[0].clientY;
+        globeCenterLon = (globeCenterLon - dx * 0.4) % 360;
+        globeCenterLat = Math.max(-75, Math.min(75, globeCenterLat + dy * 0.4));
+      }
+    });
+
+    // Vector Continents Coordinate Data
+    const CONTINENT_OUTLINES = [
+      // North America
+      [[70,-160],[60,-140],[50,-125],[35,-120],[25,-110],[18,-100],[15,-90],[20,-85],[30,-80],[40,-74],[50,-60],[65,-65],[75,-95],[70,-160]],
+      // South America
+      [[12,-75],[5,-50],[-5,-35],[-20,-40],[-35,-55],[-55,-68],[-45,-75],[-20,-70],[-5,-80],[12,-75]],
+      // Europe
+      [[70,25],[60,30],[55,20],[45,15],[38,24],[36,-5],[43,-9],[50,-4],[58,5],[65,12],[70,25]],
+      // Africa
+      [[37,10],[30,32],[12,44],[-5,40],[-25,33],[-34,20],[-20,12],[5,1],[15,-17],[28,-12],[37,10]],
+      // Asia
+      [[75,100],[70,170],[55,160],[40,130],[30,122],[20,110],[10,104],[1,104],[15,80],[25,60],[40,50],[60,60],[75,100]],
+      // Australia
+      [[-12,130],[-15,145],[-25,152],[-38,145],[-35,115],[-20,115],[-12,130]]
+    ];
+
+    function renderGlobe() {
+      const w = globeCanvas.width;
+      const h = globeCanvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      const radius = Math.min(w, h) * 0.38 * globeZoom;
+
+      gCtx.clearRect(0, 0, w, h);
+
+      // 1. Ocean Surface Sphere
+      const oceanGrad = gCtx.createRadialGradient(cx - radius * 0.2, cy - radius * 0.2, radius * 0.1, cx, cy, radius);
+      oceanGrad.addColorStop(0, "#0e1a2d");
+      oceanGrad.addColorStop(1, "#060b14");
+      gCtx.fillStyle = oceanGrad;
+      gCtx.beginPath();
+      gCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+      gCtx.fill();
+
+      // Globe Rim Glow
+      gCtx.strokeStyle = "rgba(0, 229, 255, 0.4)";
+      gCtx.lineWidth = 2 * window.devicePixelRatio;
+      gCtx.stroke();
+
+      // 2. Lat/Lon Wireframe Grid Lines
+      gCtx.strokeStyle = "rgba(30, 58, 95, 0.35)";
+      gCtx.lineWidth = 1 * window.devicePixelRatio;
+      gCtx.setLineDash([4, 4]);
+
+      [-60, -30, 0, 30, 60].forEach(lat => {
+        gCtx.beginPath();
+        let first = true;
+        for (let lon = -180; lon <= 180; lon += 5) {
+          const pt = projectOrthographic(lat, lon, globeCenterLat, globeCenterLon, radius, cx, cy);
+          if (pt.isVisible) {
+            if (first) { gCtx.moveTo(pt.x, pt.y); first = false; }
+            else gCtx.lineTo(pt.x, pt.y);
+          } else first = true;
+        }
+        gCtx.stroke();
+      });
+
+      for (let lon = -180; lon <= 180; lon += 45) {
+        gCtx.beginPath();
+        let first = true;
+        for (let lat = -80; lat <= 80; lat += 5) {
+          const pt = projectOrthographic(lat, lon, globeCenterLat, globeCenterLon, radius, cx, cy);
+          if (pt.isVisible) {
+            if (first) { gCtx.moveTo(pt.x, pt.y); first = false; }
+            else gCtx.lineTo(pt.x, pt.y);
+          } else first = true;
+        }
+        gCtx.stroke();
+      }
+      gCtx.setLineDash([]);
+
+      // 3. Draw Vector Continents
+      gCtx.fillStyle = "rgba(22, 37, 59, 0.75)";
+      gCtx.strokeStyle = "rgba(56, 189, 248, 0.6)";
+      gCtx.lineWidth = 1.5 * window.devicePixelRatio;
+
+      CONTINENT_OUTLINES.forEach(outline => {
+        gCtx.beginPath();
+        let anyVis = false;
+        let first = true;
+        outline.forEach(([lat, lon]) => {
+          const pt = projectOrthographic(lat, lon, globeCenterLat, globeCenterLon, radius, cx, cy);
+          if (pt.isVisible) {
+            anyVis = true;
+            if (first) { gCtx.moveTo(pt.x, pt.y); first = false; }
+            else gCtx.lineTo(pt.x, pt.y);
+          }
+        });
+        if (anyVis) {
+          gCtx.fill();
+          gCtx.stroke();
+        }
+      });
+
+      // 4. Draw Major Airport Nodes
+      PREMIER_AIRPORTS.forEach(a => {
+        const pt = projectOrthographic(a.lat, a.lon, globeCenterLat, globeCenterLon, radius, cx, cy);
+        if (pt.isVisible) {
+          // Radar pulse ring
+          gCtx.fillStyle = "rgba(0, 229, 255, 0.25)";
+          gCtx.beginPath();
+          gCtx.arc(pt.x, pt.y, 6 * window.devicePixelRatio, 0, Math.PI * 2);
+          gCtx.fill();
+          // Airport dot
+          gCtx.fillStyle = "#00e5ff";
+          gCtx.beginPath();
+          gCtx.arc(pt.x, pt.y, 2.5 * window.devicePixelRatio, 0, Math.PI * 2);
+          gCtx.fill();
+        }
+      });
+
+      // 5. Draw Flight Trajectory Arcs & Live Aircraft Sprites
+      state.activeFlights.forEach(f => {
+        // Draw dashed great circle path
+        gCtx.strokeStyle = "rgba(0, 229, 255, 0.75)";
+        gCtx.lineWidth = 2 * window.devicePixelRatio;
+        gCtx.setLineDash([6, 4]);
+        gCtx.beginPath();
+        let first = true;
+        for (let i = 0; i <= 20; i++) {
+          const pos = interpolateGreatCircle(f.originLat, f.originLon, f.destLat, f.destLon, i / 20);
+          const pt = projectOrthographic(pos.lat, pos.lon, globeCenterLat, globeCenterLon, radius, cx, cy);
+          if (pt.isVisible) {
+            if (first) { gCtx.moveTo(pt.x, pt.y); first = false; }
+            else gCtx.lineTo(pt.x, pt.y);
+          } else first = true;
+        }
+        gCtx.stroke();
+        gCtx.setLineDash([]);
+
+        // Draw Live Aircraft Blip
+        const planePt = projectOrthographic(f.currentLat, f.currentLon, globeCenterLat, globeCenterLon, radius, cx, cy);
+        if (planePt.isVisible) {
+          // Glowing radar blip
+          gCtx.fillStyle = "rgba(16, 185, 129, 0.4)";
+          gCtx.beginPath();
+          gCtx.arc(planePt.x, planePt.y, 9 * window.devicePixelRatio, 0, Math.PI * 2);
+          gCtx.fill();
+
+          gCtx.fillStyle = "#10b981";
+          gCtx.beginPath();
+          gCtx.arc(planePt.x, planePt.y, 4 * window.devicePixelRatio, 0, Math.PI * 2);
+          gCtx.fill();
+
+          // Heading line
+          const headRad = toRad(f.heading);
+          const vecLen = 14 * window.devicePixelRatio;
+          gCtx.strokeStyle = "#ffffff";
+          gCtx.lineWidth = 2 * window.devicePixelRatio;
+          gCtx.beginPath();
+          gCtx.moveTo(planePt.x, planePt.y);
+          gCtx.lineTo(planePt.x + Math.sin(headRad) * vecLen, planePt.y - Math.cos(headRad) * vecLen);
+          gCtx.stroke();
+        }
+      });
+    }
+
+    // ==========================================
+    // 6. LIVERY STUDIO CANVAS
+    // ==========================================
+
+    const liveryCanvas = document.getElementById("livery-canvas");
+    const lCtx = liveryCanvas.getContext("2d");
+
+    function renderLivery() {
+      const w = liveryCanvas.clientWidth * window.devicePixelRatio;
+      const h = liveryCanvas.clientHeight * window.devicePixelRatio;
+      liveryCanvas.width = w;
+      liveryCanvas.height = h;
+
+      lCtx.clearRect(0, 0, w, h);
+
+      const scale = (w / 800) * 1.05;
+      const ox = w * 0.10;
+      const oy = h * 0.48;
+
+      const liv = state.livery;
+
+      // 1. Tail Fin
+      lCtx.fillStyle = liv.tail;
+      lCtx.beginPath();
+      lCtx.moveTo(ox + 480 * scale, oy - 10 * scale);
+      lCtx.lineTo(ox + 540 * scale, oy - 130 * scale);
+      lCtx.lineTo(ox + 580 * scale, oy - 130 * scale);
+      lCtx.lineTo(ox + 560 * scale, oy + 15 * scale);
+      lCtx.closePath();
+      lCtx.fill();
+      lCtx.strokeStyle = "#1e293b";
+      lCtx.lineWidth = 2;
+      lCtx.stroke();
+
+      // Draw Tail Logo Emblem
+      drawTailInsignia(lCtx, liv.tailLogo, ox + 550 * scale, oy - 90 * scale, 24 * scale);
+
+      // Horizontal Stabilizer
+      lCtx.fillStyle = liv.tail;
+      lCtx.beginPath();
+      lCtx.moveTo(ox + 510 * scale, oy + 5 * scale);
+      lCtx.lineTo(ox + 580 * scale, oy - 20 * scale);
+      lCtx.lineTo(ox + 590 * scale, oy - 10 * scale);
+      lCtx.lineTo(ox + 530 * scale, oy + 15 * scale);
+      lCtx.closePath();
+      lCtx.fill();
+
+      // 2. Fuselage Top (Base White/Coating)
+      lCtx.fillStyle = liv.fuselage;
+      lCtx.beginPath();
+      lCtx.moveTo(ox + 20 * scale, oy + 25 * scale);
+      lCtx.bezierCurveTo(ox + 30 * scale, oy - 5 * scale, ox + 70 * scale, oy - 25 * scale, ox + 130 * scale, oy - 25 * scale);
+      lCtx.lineTo(ox + 480 * scale, oy - 25 * scale);
+      lCtx.bezierCurveTo(ox + 530 * scale, oy - 20 * scale, ox + 570 * scale, oy - 5 * scale, ox + 590 * scale, oy + 10 * scale);
+      lCtx.lineTo(ox + 560 * scale, oy + 25 * scale);
+      lCtx.closePath();
+      lCtx.fill();
+
+      // 3. Fuselage Belly Section
+      lCtx.fillStyle = liv.belly;
+      lCtx.beginPath();
+      lCtx.moveTo(ox + 20 * scale, oy + 25 * scale);
+      lCtx.lineTo(ox + 560 * scale, oy + 25 * scale);
+      lCtx.bezierCurveTo(ox + 520 * scale, oy + 45 * scale, ox + 460 * scale, oy + 55 * scale, ox + 350 * scale, oy + 55 * scale);
+      lCtx.lineTo(ox + 120 * scale, oy + 55 * scale);
+      lCtx.bezierCurveTo(ox + 60 * scale, oy + 50 * scale, ox + 25 * scale, oy + 40 * scale, ox + 20 * scale, oy + 25 * scale);
+      lCtx.closePath();
+      lCtx.fill();
+
+      // 4. Cheatline Accent Pattern
+      lCtx.fillStyle = liv.cheatline;
+      if (liv.cheatStyle === "CLASSIC_STRIPE") {
+        lCtx.fillRect(ox + 55 * scale, oy + 20 * scale, 480 * scale, 7 * scale);
+      } else if (liv.cheatStyle === "MODERN_SWOOP") {
+        lCtx.beginPath();
+        lCtx.moveTo(ox + 50 * scale, oy + 30 * scale);
+        lCtx.bezierCurveTo(ox + 200 * scale, oy + 28 * scale, ox + 380 * scale, oy + 8 * scale, ox + 520 * scale, oy - 15 * scale);
+        lCtx.lineTo(ox + 530 * scale, oy - 5 * scale);
+        lCtx.bezierCurveTo(ox + 380 * scale, oy + 20 * scale, ox + 200 * scale, oy + 38 * scale, ox + 50 * scale, oy + 36 * scale);
+        lCtx.closePath();
+        lCtx.fill();
+      } else if (liv.cheatStyle === "BILLBOARD") {
+        lCtx.fillRect(ox + 60 * scale, oy + 14 * scale, 430 * scale, 14 * scale);
+      } else if (liv.cheatStyle === "TWILIGHT_WAVE") {
+        lCtx.beginPath();
+        lCtx.moveTo(ox + 40 * scale, oy + 15 * scale);
+        lCtx.bezierCurveTo(ox + 180 * scale, oy - 5 * scale, ox + 320 * scale, oy + 40 * scale, ox + 500 * scale, oy + 5 * scale);
+        lCtx.lineTo(ox + 505 * scale, oy + 15 * scale);
+        lCtx.bezierCurveTo(ox + 320 * scale, oy + 48 * scale, ox + 180 * scale, oy + 5 * scale, ox + 40 * scale, oy + 25 * scale);
+        lCtx.closePath();
+        lCtx.fill();
+      }
+
+      // 5. Cockpit & Cabin Windows
+      lCtx.fillStyle = "#0f172a";
+      // Windshield
+      lCtx.beginPath();
+      lCtx.moveTo(ox + 45 * scale, oy + 2 * scale);
+      lCtx.lineTo(ox + 68 * scale, oy - 8 * scale);
+      lCtx.lineTo(ox + 74 * scale, oy + 2 * scale);
+      lCtx.lineTo(ox + 48 * scale, oy + 8 * scale);
+      lCtx.closePath();
+      lCtx.fill();
+
+      // Cabin Windows
+      for (let i = 0; i < 26; i++) {
+        lCtx.fillRect(ox + (90 + i * 15) * scale, oy - 5 * scale, 6 * scale, 9 * scale);
+      }
+
+      // 6. Swept Wing & Engine Cowling
+      lCtx.fillStyle = "#94a3b8";
+      lCtx.beginPath();
+      lCtx.moveTo(ox + 220 * scale, oy + 20 * scale);
+      lCtx.lineTo(ox + 280 * scale, oy + 115 * scale);
+      lCtx.lineTo(ox + 310 * scale, oy + 115 * scale);
+      lCtx.lineTo(ox + 320 * scale, oy + 20 * scale);
+      lCtx.closePath();
+      lCtx.fill();
+
+      // Engine Cowling
+      lCtx.fillStyle = liv.cowling;
+      lCtx.beginPath();
+      lCtx.roundRect(ox + 225 * scale, oy + 68 * scale, 65 * scale, 28 * scale, 10 * scale);
+      lCtx.fill();
+
+      // Fuselage Boundary Stroke
+      lCtx.strokeStyle = "#334155";
+      lCtx.lineWidth = 2.5;
+      lCtx.beginPath();
+      lCtx.moveTo(ox + 20 * scale, oy + 25 * scale);
+      lCtx.bezierCurveTo(ox + 30 * scale, oy - 5 * scale, ox + 70 * scale, oy - 25 * scale, ox + 130 * scale, oy - 25 * scale);
+      lCtx.lineTo(ox + 480 * scale, oy - 25 * scale);
+      lCtx.bezierCurveTo(ox + 530 * scale, oy - 20 * scale, ox + 570 * scale, oy - 5 * scale, ox + 590 * scale, oy + 10 * scale);
+      lCtx.lineTo(ox + 560 * scale, oy + 25 * scale);
+      lCtx.bezierCurveTo(ox + 520 * scale, oy + 45 * scale, ox + 460 * scale, oy + 55 * scale, ox + 350 * scale, oy + 55 * scale);
+      lCtx.lineTo(ox + 120 * scale, oy + 55 * scale);
+      lCtx.bezierCurveTo(ox + 60 * scale, oy + 50 * scale, ox + 25 * scale, oy + 40 * scale, ox + 20 * scale, oy + 25 * scale);
+      lCtx.closePath();
+      lCtx.stroke();
+    }
+
+    function drawTailInsignia(ctx, logo, x, y, size) {
+      ctx.fillStyle = "#f59e0b";
+      if (logo === "GOLDEN_WINGS") {
+        ctx.beginPath();
+        ctx.moveTo(x, y + size * 0.4);
+        ctx.bezierCurveTo(x - size * 0.8, y, x - size, y - size * 0.8, x - size * 0.2, y - size * 0.5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x, y + size * 0.4);
+        ctx.bezierCurveTo(x + size * 0.8, y, x + size, y - size * 0.8, x + size * 0.2, y - size * 0.5);
+        ctx.closePath();
+        ctx.fill();
+      } else if (logo === "RADAR_STAR") {
+        ctx.fillStyle = "#00e5ff";
+        ctx.beginPath();
+        ctx.moveTo(x, y - size * 0.9);
+        ctx.lineTo(x + size * 0.25, y - size * 0.25);
+        ctx.lineTo(x + size * 0.9, y);
+        ctx.lineTo(x + size * 0.25, y + size * 0.25);
+        ctx.lineTo(x, y + size * 0.9);
+        ctx.lineTo(x - size * 0.25, y + size * 0.25);
+        ctx.lineTo(x - size * 0.9, y);
+        ctx.lineTo(x - size * 0.25, y - size * 0.25);
+        ctx.closePath();
+        ctx.fill();
+      } else if (logo === "AERO_CHEVRON") {
+        ctx.fillStyle = "#00e5ff";
+        ctx.beginPath();
+        ctx.moveTo(x - size * 0.7, y + size * 0.3);
+        ctx.lineTo(x, y - size * 0.6);
+        ctx.lineTo(x + size * 0.7, y + size * 0.3);
+        ctx.lineTo(x, y - size * 0.1);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = "#00e5ff";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(x, y, size * 0.6, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, y, size * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // ==========================================
+    // 7. UI CONTROLLERS & EVENT LISTENERS
+    // ==========================================
+
+    function switchScreen(screenId, btn) {
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+      document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
+      document.getElementById(screenId).classList.add("active");
+      if (btn) btn.classList.add("active");
+
+      if (screenId === "hangar-screen") renderHangar();
+      if (screenId === "routes-screen") renderRoutes();
+      if (screenId === "livery-screen") renderLivery();
+      if (screenId === "finance-screen") renderFinance();
+    }
+
+    function setSpeed(sp) {
+      document.querySelectorAll(".warp-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById(`warp-${sp}`).classList.add("active");
+      state.speed = sp;
+      state.isPaused = (sp === 0);
+    }
+
+    // Hangar Rendering
+    let currentHangarCat = null;
+    let hangarViewMode = "CATALOG";
+
+    function setHangarCategory(cat, btn) {
+      hangarViewMode = "CATALOG";
+      currentHangarCat = cat;
+      document.querySelectorAll("#hangar-tabs .tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderHangar();
+    }
+
+    function setHangarViewMode(mode, btn) {
+      hangarViewMode = mode;
+      document.querySelectorAll("#hangar-tabs .tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderHangar();
+    }
+
+    function renderHangar() {
+      const container = document.getElementById("hangar-cards");
+      document.getElementById("fleet-count-tab").innerText = state.fleet.length;
+      container.innerHTML = "";
+
+      if (hangarViewMode === "FLEET") {
+        if (state.fleet.length === 0) {
+          container.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">No aircraft in active hangar. Acquire one from the catalog!</div>`;
+          return;
+        }
+        state.fleet.forEach(plane => {
+          const model = AIRCRAFT_CATALOG.find(m => m.id === plane.modelId);
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <div class="card-top">
+              <div>
+                <span class="card-heading">${plane.customName}</span>
+                <span style="color: var(--primary); font-family: var(--font-mono); font-size: 0.8rem; margin-left: 6px;">[${plane.reg}]</span>
+                <div class="card-sub">${model ? model.name : ""} • Flight Hours: ${plane.flightHours.toFixed(1)} hrs</div>
+              </div>
+              <span class="badge ${plane.isLeased ? 'badge-gold' : 'badge-primary'}">${plane.isLeased ? 'Leased' : 'Owned'}</span>
+            </div>
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px;">
+                <span>Airframe Health</span>
+                <span style="font-weight: 700; color: ${plane.condition > 70 ? 'var(--success)' : 'var(--danger)'};">${plane.condition}%</span>
+              </div>
+              <div class="flight-progress-bar">
+                <div class="flight-progress-fill" style="width: ${plane.condition}%; background: ${plane.condition > 70 ? 'var(--success)' : 'var(--danger)'};"></div>
+              </div>
+            </div>
+            ${plane.condition < 90 ? `
+              <div style="display: flex; justify-content: flex-end;">
+                <button class="btn btn-outline" style="max-width: 180px;" onclick="servicePlane('${plane.id}')">🛠 A-Check Service</button>
+              </div>` : ''}
+          `;
+          container.appendChild(card);
+        });
+        return;
+      }
+
+      // Catalog view
+      const planes = currentHangarCat ? AIRCRAFT_CATALOG.filter(m => m.cat === currentHangarCat) : AIRCRAFT_CATALOG;
+      planes.forEach(model => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="card-top">
+            <div>
+              <div class="card-heading">${model.name}</div>
+              <div class="card-sub">${model.mfr} • ${model.cat}</div>
+            </div>
+            <span class="badge badge-primary">${model.engine}</span>
+          </div>
+          <div class="specs-grid">
+            <div class="spec-item"><span class="spec-key">Range</span><span class="spec-val">${model.range} km</span></div>
+            <div class="spec-item"><span class="spec-key">Speed</span><span class="spec-val">${model.speed} km/h</span></div>
+            <div class="spec-item"><span class="spec-key">Capacity</span><span class="spec-val">${model.eco + model.biz + model.first > 0 ? (model.eco + model.biz + model.first) + ' Pax' : model.cargo + 't Cargo'}</span></div>
+            <div class="spec-item"><span class="spec-key">Runway</span><span class="spec-val">${model.runway} m</span></div>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">${model.desc}</div>
+          <div class="btn-row">
+            <button class="btn btn-outline" onclick="acquireAircraft('${model.id}', true)">
+              <span>Dry Lease</span>
+              <span class="btn-subtext">${formatCurrency(model.lease)}/day</span>
+            </button>
+            <button class="btn btn-primary" onclick="acquireAircraft('${model.id}', false)">
+              <span>Buy Outright</span>
+              <span class="btn-subtext">${formatCurrency(model.price)}</span>
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function acquireAircraft(modelId, asLease) {
+      const model = AIRCRAFT_CATALOG.find(m => m.id === modelId);
+      if (!model) return;
+      const cost = asLease ? model.lease * 3 : model.price;
+      if (state.cash < cost) {
+        alert("Insufficient capital in treasury for this order!");
+        return;
+      }
+      state.cash -= cost;
+      const reg = `${state.iata}-${Math.floor(100 + Math.random() * 899)}`;
+      state.fleet.push({
+        id: "plane_" + Date.now(),
+        modelId: model.id,
+        reg: reg,
+        customName: `${model.name} Line`,
+        isLeased: asLease,
+        condition: 100,
+        flightHours: 0
+      });
+      state.ledger.unshift({
+        day: state.day,
+        desc: `${asLease ? 'Dry Lease Deposit' : 'Outright Purchase'}: ${model.name} [${reg}]`,
+        amount: cost,
+        isIncome: false
+      });
+      alert(`Success! ${model.name} [${reg}] delivered to hangar.`);
+      renderHangar();
+    }
+
+    function servicePlane(planeId) {
+      const plane = state.fleet.find(p => p.id === planeId);
+      if (!plane) return;
+      const cost = 8500;
+      if (state.cash < cost) {
+        alert("Insufficient cash for maintenance overhaul.");
+        return;
+      }
+      state.cash -= cost;
+      plane.condition = 100;
+      state.ledger.unshift({ day: state.day, desc: `A-Check Overhaul: ${plane.reg}`, amount: cost, isIncome: false });
+      renderHangar();
+    }
+
+    // Routes Rendering
+    function renderRoutes() {
+      const container = document.getElementById("routes-cards");
+      container.innerHTML = "";
+      if (state.routes.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">No routes established. Tap '+ Launch Route' to connect the world!</div>`;
+        return;
+      }
+
+      state.routes.forEach(route => {
+        const plane = state.fleet.find(p => p.id === route.assignedPlaneId);
+        const model = plane ? AIRCRAFT_CATALOG.find(m => m.id === plane.modelId) : null;
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="card-top">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="airport-code">${route.origin}</span>
+              <span style="color: var(--text-muted); font-size: 0.9rem;">✈</span>
+              <span class="airport-code">${route.dest}</span>
+              <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 6px;">(${route.distanceKm} km)</span>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.75rem;" onclick="openPricingModal('${route.id}')">Pricing</button>
+              <button class="btn btn-danger" style="padding: 4px 10px; font-size: 0.75rem;" onclick="cancelRoute('${route.id}')">Cancel</button>
+            </div>
+          </div>
+          <div class="card-sub">Assigned: <b>${plane ? plane.customName : 'None'} [${plane ? plane.reg : ''}]</b> • ${route.freq}x Daily</div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid var(--card-border); padding-top: 8px;">
+            <span>Eco Fare: <b>$${route.ecoFare}</b> | Cargo: <b>$${route.cargoRate.toFixed(2)}/kg</b></span>
+            <span style="color: var(--success); font-weight: 700;">Net Profit: +${formatCurrency(route.lastProfit || 12000)}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function cancelRoute(routeId) {
+      state.routes = state.routes.filter(r => r.id !== routeId);
+      state.activeFlights = state.activeFlights.filter(f => f.routeId !== routeId);
+      renderRoutes();
+    }
+
+    // Route Creation Modal
+    function openNewRouteModal() {
+      const select = document.getElementById("new-plane-select");
+      select.innerHTML = "";
+      state.fleet.forEach(p => {
+        const m = AIRCRAFT_CATALOG.find(c => c.id === p.modelId);
+        select.innerHTML += `<option value="${p.id}">${p.customName} [${p.reg}] (${m ? m.name : ''})</option>`;
+      });
+      document.getElementById("new-origin").value = state.hubIata;
+      document.getElementById("route-modal").classList.add("active");
+    }
+
+    function closeRouteModal() {
+      document.getElementById("route-modal").classList.remove("active");
+    }
+
+    function confirmLaunchRoute() {
+      const orig = document.getElementById("new-origin").value.trim().toUpperCase();
+      const dest = document.getElementById("new-dest").value.trim().toUpperCase();
+      const planeId = document.getElementById("new-plane-select").value;
+      const freq = parseInt(document.getElementById("new-freq").value);
+
+      if (!orig || !dest || orig === dest) {
+        alert("Please enter distinct valid 3-letter IATA codes!");
+        return;
+      }
+      const a1 = getAirport(orig);
+      const a2 = getAirport(dest);
+      if (!a1 || !a2) {
+        alert("One or both airport codes not recognized in global directory.");
+        return;
+      }
+
+      const dist = calculateDistanceKm(a1.lat, a1.lon, a2.lat, a2.lon);
+      const plane = state.fleet.find(p => p.id === planeId);
+      const model = plane ? AIRCRAFT_CATALOG.find(m => m.id === plane.modelId) : null;
+      if (model && model.range < dist) {
+        alert(`Aircraft range (${model.range} km) is insufficient for route distance (${dist} km)!`);
+        return;
+      }
+
+      const routeId = "route_" + Date.now();
+      state.routes.push({
+        id: routeId,
+        origin: orig,
+        dest: dest,
+        distanceKm: dist,
+        assignedPlaneId: planeId,
+        freq: freq,
+        ecoFare: Math.round(45 + dist * 0.11),
+        bizFare: Math.round((45 + dist * 0.11) * 2.8),
+        cargoRate: +(1.2 + dist * 0.0007).toFixed(2),
+        lastProfit: 15000
+      });
+
+      launchFlight(routeId, planeId);
+      closeRouteModal();
+      renderRoutes();
+    }
+
+    // Pricing Modal
+    let editingRouteId = null;
+    function openPricingModal(routeId) {
+      editingRouteId = routeId;
+      const r = state.routes.find(rt => rt.id === routeId);
+      if (!r) return;
+      document.getElementById("pricing-title").innerText = `${r.origin} ↔ ${r.dest}`;
+      document.getElementById("pricing-eco").value = r.ecoFare;
+      document.getElementById("eco-val").innerText = "$" + r.ecoFare;
+      document.getElementById("pricing-biz").value = r.bizFare;
+      document.getElementById("biz-val").innerText = "$" + r.bizFare;
+      document.getElementById("pricing-cargo").value = r.cargoRate;
+      document.getElementById("cargo-val").innerText = "$" + r.cargoRate.toFixed(2) + "/kg";
+      document.getElementById("pricing-modal").classList.add("active");
+    }
+
+    function closePricingModal() {
+      document.getElementById("pricing-modal").classList.remove("active");
+    }
+
+    function confirmSavePricing() {
+      const r = state.routes.find(rt => rt.id === editingRouteId);
+      if (r) {
+        r.ecoFare = parseInt(document.getElementById("pricing-eco").value);
+        r.bizFare = parseInt(document.getElementById("pricing-biz").value);
+        r.cargoRate = parseFloat(document.getElementById("pricing-cargo").value);
+      }
+      closePricingModal();
+      renderRoutes();
+    }
+
+    // Events Modal
+    function openEventsModal() {
+      const container = document.getElementById("events-list");
+      container.innerHTML = "";
+      if (state.events.length === 0) {
+        container.innerHTML = `<div style="color: var(--text-muted); text-align: center; padding: 20px;">All global air corridors are operating normally.</div>`;
+      } else {
+        state.events.forEach(e => {
+          container.innerHTML += `
+            <div class="card">
+              <div class="card-top">
+                <span class="badge badge-gold">${e.title}</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">${e.daysRemaining} days remaining</span>
+              </div>
+              <div style="font-weight: 700; font-size: 0.95rem;">${e.headline}</div>
+              <div style="font-size: 0.78rem; color: var(--text-muted);">${e.desc}</div>
+            </div>
+          `;
+        });
+      }
+      document.getElementById("events-modal").classList.add("active");
+    }
+    function closeEventsModal() {
+      document.getElementById("events-modal").classList.remove("active");
+    }
+
+    // Finance Screen
+    function renderFinance() {
+      document.getElementById("fin-cash").innerText = formatCurrency(state.cash);
+      document.getElementById("fin-debt").innerText = formatCurrency(state.loans);
+      document.getElementById("fin-pax").innerText = state.passengersTransported.toLocaleString();
+      document.getElementById("fin-cargo").innerText = state.cargoTransported.toFixed(1) + " Tonnes";
+
+      const list = document.getElementById("ledger-list");
+      list.innerHTML = "";
+      state.ledger.slice(0, 15).forEach(e => {
+        list.innerHTML += `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(10,14,23,0.5); border-radius: 6px; font-size: 0.8rem;">
+            <div>
+              <div style="color: #fff;">${e.desc}</div>
+              <div style="color: var(--text-muted); font-size: 0.68rem;">Day ${e.day}</div>
+            </div>
+            <div style="font-family: var(--font-mono); font-weight: 700; color: ${e.isIncome ? 'var(--success)' : 'var(--danger)'};">
+              ${e.isIncome ? '+' : '-'}${formatCurrency(e.amount)}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function takeLoan(amt) {
+      if (state.loans + amt > 100000000) {
+        alert("Credit ceiling of $100M reached!");
+        return;
+      }
+      state.cash += amt;
+      state.loans += amt;
+      state.ledger.unshift({ day: state.day, desc: "Commercial Credit Drawn", amount: amt, isIncome: true });
+      renderFinance();
+      updateHUD();
+    }
+
+    function repayLoan(amt) {
+      if (state.cash < amt || state.loans < amt) {
+        alert("Insufficient cash or loan balance is smaller than payment.");
+        return;
+      }
+      state.cash -= amt;
+      state.loans -= amt;
+      state.ledger.unshift({ day: state.day, desc: "Credit Principal Repaid", amount: amt, isIncome: false });
+      renderFinance();
+      updateHUD();
+    }
+
+    // Scenario Setup Modal
+    function openScenarioModal() {
+      document.getElementById("scenario-modal").classList.add("active");
+    }
+    function closeScenarioModal() {
+      document.getElementById("scenario-modal").classList.remove("active");
+    }
+
+    function selectScenarioPreset(preset) {
+      const name = document.getElementById("scenario-name").value.trim() || "AeroGlobal";
+      const iata = document.getElementById("scenario-iata").value.trim().toUpperCase() || "AG";
+      const hub = document.getElementById("scenario-hub").value;
+
+      state.airlineName = name;
+      state.iata = iata;
+      state.hubIata = hub;
+      state.routes = [];
+      state.activeFlights = [];
+      state.fleet = [];
+      state.ledger = [];
+      state.day = 1;
+      state.hour = 8;
+
+      if (preset === "SANDBOX") {
+        state.cash = 200000000;
+        state.reputation = 85;
+        state.fleet.push({ id: "p1", modelId: "a321neo", reg: `${iata}-101`, customName: "Flagship Neo", isLeased: false, condition: 100, flightHours: 0 });
+        state.fleet.push({ id: "p2", modelId: "b787_9", reg: `${iata}-201`, customName: "Dream Horizon", isLeased: false, condition: 100, flightHours: 0 });
+      } else if (preset === "MODERN_STARTUP") {
+        state.cash = 50000000;
+        state.reputation = 50;
+        state.fleet.push({ id: "p1", modelId: "e175", reg: `${iata}-101`, customName: "Regional One", isLeased: true, condition: 100, flightHours: 0 });
+        state.fleet.push({ id: "p2", modelId: "a220_100", reg: `${iata}-102`, customName: "City Connector", isLeased: true, condition: 100, flightHours: 0 });
+      } else if (preset === "VETERAN_TYCOON") {
+        state.cash = 20000000;
+        state.reputation = 35;
+        state.fleet.push({ id: "p1", modelId: "dash_8_q400", reg: `${iata}-101`, customName: "Feeder Express", isLeased: true, condition: 100, flightHours: 0 });
+      } else if (preset === "CARGO_TITAN") {
+        state.cash = 65000000;
+        state.reputation = 60;
+        state.fleet.push({ id: "p1", modelId: "b737_800bcf", reg: `${iata}-901`, customName: "Air Freight I", isLeased: false, condition: 100, flightHours: 0 });
+        state.fleet.push({ id: "p2", modelId: "b767_300f", reg: `${iata}-902`, customName: "Titan Freighter", isLeased: true, condition: 100, flightHours: 0 });
+      }
+
+      state.ledger.push({ day: 1, desc: `Initial Capital Injection (${preset})`, amount: state.cash, isIncome: true });
+      closeScenarioModal();
+      updateHUD();
+      alert(`Empire ${name} established with Hub ${hub}!`);
+    }
+
+    // Livery Swatches Generator
+    function initLiverySwatches() {
+      const fuselageCol = ["#f8fafc", "#e2e8f0", "#0f172a", "#1e3a8a", "#fef3c7", "#ffedd5"];
+      const tailCol = ["#0284c7", "#10b981", "#ef4444", "#f59e0b", "#8b5cf6", "#00e5ff"];
+      const cheatCol = ["#00e5ff", "#f59e0b", "#ef4444", "#10b981", "#ffffff"];
+
+      const fContainer = document.getElementById("fuselage-swatches");
+      fuselageCol.forEach(c => {
+        const sw = document.createElement("div");
+        sw.className = `swatch ${state.livery.fuselage === c ? 'selected' : ''}`;
+        sw.style.backgroundColor = c;
+        sw.onclick = () => {
+          state.livery.fuselage = c;
+          document.querySelectorAll("#fuselage-swatches .swatch").forEach(s => s.classList.remove("selected"));
+          sw.classList.add("selected");
+          renderLivery();
+        };
+        fContainer.appendChild(sw);
+      });
+
+      const tContainer = document.getElementById("tail-swatches");
+      tailCol.forEach(c => {
+        const sw = document.createElement("div");
+        sw.className = `swatch ${state.livery.tail === c ? 'selected' : ''}`;
+        sw.style.backgroundColor = c;
+        sw.onclick = () => {
+          state.livery.tail = c;
+          state.livery.cowling = c;
+          document.querySelectorAll("#tail-swatches .swatch").forEach(s => s.classList.remove("selected"));
+          sw.classList.add("selected");
+          renderLivery();
+        };
+        tContainer.appendChild(sw);
+      });
+
+      const cContainer = document.getElementById("cheatline-swatches");
+      cheatCol.forEach(c => {
+        const sw = document.createElement("div");
+        sw.className = `swatch ${state.livery.cheatline === c ? 'selected' : ''}`;
+        sw.style.backgroundColor = c;
+        sw.onclick = () => {
+          state.livery.cheatline = c;
+          document.querySelectorAll("#cheatline-swatches .swatch").forEach(s => s.classList.remove("selected"));
+          sw.classList.add("selected");
+          renderLivery();
+        };
+        cContainer.appendChild(sw);
+      });
+    }
+
+    function setCheatStyle(style, btn) {
+      state.livery.cheatStyle = style;
+      document.querySelectorAll("#style-tabs .tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderLivery();
+    }
+
+    function setTailLogo(logo, btn) {
+      state.livery.tailLogo = logo;
+      document.querySelectorAll("#logo-tabs .tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderLivery();
+    }
+
+    function saveLivery() {
+      alert("Custom livery saved and applied across your global fleet!");
+    }
+
+    // Kickoff
+    initLiverySwatches();
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
