@@ -1,0 +1,6 @@
+{
+  "name": "Airline CEO",
+  "description": "Global aviation management tycoon game. Build routes, customize liveries, command 70+ aircraft across 2,230+ airports, and react to dynamic events with live 3D vector flight tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
